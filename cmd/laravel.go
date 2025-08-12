@@ -6,6 +6,8 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
@@ -22,7 +24,7 @@ var laravelCmd = &cobra.Command{
 
 		containerName := ""
 		containerNamePrompt := &survey.Input{
-			Message: "Enter the container name of laravel.",
+			Message: "Enter the container name of laravel : ",
 		}
 
 		err := survey.AskOne(
@@ -38,7 +40,7 @@ var laravelCmd = &cobra.Command{
 
 		port := 0
 		portPrompt := &survey.Input{
-			Message: "Enter the port of laravel.",
+			Message: "Enter the port of laravel : ",
 		}
 
 		err = survey.AskOne(
@@ -64,7 +66,60 @@ var laravelCmd = &cobra.Command{
 			Message: "Is it okay to create a Laravel container with this configuration?",
 		}
 
-		survey.AskOne(confirmPrompt, &confirm, survey.WithValidator(survey.Required))
+		err = survey.AskOne(confirmPrompt, &confirm, survey.WithValidator(survey.Required))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		done := make(chan bool)
+		go ShowLoadingIndicator("テーマリポジトリをクローン中", done)
+		targetRepo := "https://github.com/takashiraki/docker_laravel_port.git"
+		homeDir, err := os.UserHomeDir()
+
+		if err != nil {
+			log.Fatalf("Error getting home directory: %v", err)
+		}
+
+		devPath := filepath.Join(homeDir, "dev")
+		targetPath := filepath.Join(devPath, containerName)
+
+		if err := os.MkdirAll(devPath, 0755); err != nil {
+			log.Fatalf("Error creating dev directory: %v", err)
+		}
+
+		if DirIsExists(targetPath) {
+			fmt.Printf("Directory %s already exists. Please choose a different container name.\n", targetPath)
+			done <- true
+			return
+		}
+
+		done <- true
+
+		CloneRepository(targetRepo, targetPath)
+
+		fmt.Printf("\r\033[KCloned docker laravel repository ✓\n")
+
+		srcPath := "src"
+		dockerPath := "Infra/php"
+
+		err = CreateEnvFile(
+			containerName,
+			targetPath,
+			srcPath,
+			dockerPath,
+			80,
+			8080,
+		)
+
+		if err != nil {
+			log.Fatalf("Error creating .env file: %v", err)
+		}
+
+		err = bootContainer(targetPath)
+
+		if err != nil {
+			log.Fatalf("Error booting container: %v", err)
+		}
 	},
 }
 
