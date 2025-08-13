@@ -15,26 +15,6 @@ func clearTerminal() {
 	fmt.Println("\033c")
 }
 
-func validatePort(val interface{}) error {
-	str := val.(string)
-
-	port, err := strconv.Atoi(str)
-
-	if err != nil {
-		return errors.New("invalid port")
-	}
-
-	if port < 1 || port > 65535 {
-		return errors.New("port must be between 1 and 65535")
-	}
-
-	if port < 1024 {
-		return errors.New("port must be greater than 1024")
-	}
-
-	return nil
-}
-
 func ShowLoadingIndicator(message string, done chan bool) {
 	frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 	i := 0
@@ -53,10 +33,7 @@ func ShowLoadingIndicator(message string, done chan bool) {
 
 func DirIsExists(dir string) bool {
 	_, err := os.Stat(dir)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return true
+	return !os.IsNotExist(err)
 }
 
 func CreateEnvFile(
@@ -79,7 +56,7 @@ func CreateEnvFile(
 	}
 
 	done := make(chan bool)
-	go ShowLoadingIndicator("環境ファイルを作成中", done)
+	go ShowLoadingIndicator("Creating .env file", done)
 
 	cpCmd := exec.Command("cp", envExampleFilePath, envFilePath)
 	err := cpCmd.Run()
@@ -92,10 +69,10 @@ func CreateEnvFile(
 
 	done <- true
 
-	fmt.Printf("\r\033[k環境ファイルの作成が完了しました ✓\n")
+	fmt.Printf("\r\033[k.env file created ✓\n")
 
 	done = make(chan bool)
-	go ShowLoadingIndicator("環境ファイルを設定中", done)
+	go ShowLoadingIndicator("Setting .env file", done)
 
 	content, err := os.ReadFile(envFilePath)
 
@@ -124,7 +101,7 @@ func CreateEnvFile(
 	}
 
 	done <- true
-	fmt.Printf("\r\033[K環境ファイルの設定が完了しました ✓\n")
+	fmt.Printf("\r\033[K.env file set ✓\n")
 
 	return nil
 }

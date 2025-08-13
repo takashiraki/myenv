@@ -4,6 +4,7 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -32,6 +33,7 @@ var laravelCmd = &cobra.Command{
 			survey.WithValidator(survey.Required),
 			survey.WithValidator(survey.MinLength(3)),
 			survey.WithValidator(survey.MaxLength(20)),
+			survey.WithValidator(validateLaravelProjectName),
 		)
 
 		if err != nil {
@@ -69,10 +71,14 @@ var laravelCmd = &cobra.Command{
 		err = survey.AskOne(confirmPrompt, &confirm, survey.WithValidator(survey.Required))
 		if err != nil {
 			log.Fatal(err)
+			return
 		}
 
-		done := make(chan bool)
-		go ShowLoadingIndicator("テーマリポジトリをクローン中", done)
+		if !confirm {
+			fmt.Println("Container creation cancelled")
+			return
+		}
+
 		targetRepo := "https://github.com/takashiraki/docker_laravel_port.git"
 		homeDir, err := os.UserHomeDir()
 
@@ -87,38 +93,32 @@ var laravelCmd = &cobra.Command{
 			log.Fatalf("Error creating dev directory: %v", err)
 		}
 
-		if DirIsExists(targetPath) {
-			fmt.Printf("Directory %s already exists. Please choose a different container name.\n", targetPath)
-			done <- true
-			return
-		}
-
-		done <- true
-
 		CloneRepository(targetRepo, targetPath)
-
-		fmt.Printf("\r\033[KCloned docker laravel repository ✓\n")
 
 		srcPath := "src"
 		dockerPath := "Infra/php"
 
-		err = CreateEnvFile(
+		if err := CreateEnvFile(
 			containerName,
 			targetPath,
 			srcPath,
 			dockerPath,
 			80,
 			8080,
-		)
-
-		if err != nil {
+		); err != nil {
 			log.Fatalf("Error creating .env file: %v", err)
 		}
 
-		err = bootContainer(targetPath)
-
-		if err != nil {
+		if err := bootContainer(targetPath); err != nil {
 			log.Fatalf("Error booting container: %v", err)
+		}
+
+		commandArgs := []string{"compose", "exec", "php", "laravel", "new", containerName, "--no-interaction", "--phpunit"}
+		indicator := "Creating new laravel project"
+		completeMessage := "Creating new laravel project completed"
+
+		if err := execCommand("docker", commandArgs, targetPath, indicator, completeMessage); err != nil {
+			log.Fatalf("Error creating new laravel project: %v", err)
 		}
 	},
 }
@@ -135,4 +135,20 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// laravelCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func validateLaravelProjectName(val interface{}) error {
+	str := val.(string)
+
+	if str == "laravel" {
+		return errors.New("laravel is a reserved project name")
+	}
+
+	err := validateProjectName("laravel_" + str)
+
+	if err != nil {
+		return errors.New("project name already exists")
+	}
+
+	return nil
 }

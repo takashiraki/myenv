@@ -8,7 +8,7 @@ import (
 func CloneRepository(repo string, dir string) error {
 	done := make(chan bool)
 
-	go ShowLoadingIndicator("コンテナを起動中", done)
+	go ShowLoadingIndicator("Cloning repository", done)
 
 	cmd := exec.Command("git", "clone", repo, dir)
 
@@ -20,6 +20,6 @@ func CloneRepository(repo string, dir string) error {
 
 	done <- true
 
-	fmt.Printf("\r\033[kコンテナの起動が完了しました ✓\n")
+	fmt.Printf("\r\033[kCloning repository completed ✓\n")
 	return nil
 }
