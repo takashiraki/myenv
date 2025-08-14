@@ -23,7 +23,29 @@ func bootContainer(ymlPath string) error {
 
 	ch <- true
 
-	fmt.Printf("\r\033[kContainer booted ✓\n")
+	fmt.Printf("\r\033[KContainer booted ✓\n")
+
+	return nil
+}
+
+func rebbuildContainer(ymlPath string) error {
+	ch := make(chan bool)
+
+	go ShowLoadingIndicator("Rebuilding container", ch)
+
+	cmd := exec.Command("docker", "compose", "up", "-d", "--build")
+	cmd.Dir = ymlPath
+
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		ch <- true
+		fmt.Printf("\r\033[Kerror rebuilding container: %v\nOutput: %s", err, output)
+		return fmt.Errorf("error rebuilding container: %v\nOutput: %s", err, output)
+	}
+
+	ch <- true
+	fmt.Printf("\r\033[KContainer rebuilt ✓\n")
 
 	return nil
 }

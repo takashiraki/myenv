@@ -8,7 +8,7 @@ import (
 )
 
 
-func validatePort(val interface{}) error {
+func validatePort(val any) error {
 	str := val.(string)
 
 	port, err := strconv.Atoi(str)
@@ -28,7 +28,7 @@ func validatePort(val interface{}) error {
 	return nil
 }
 
-func validateProjectName(val interface{}) error {
+func validateProjectName(val any) error {
 	str := val.(string)
 
 	homeDir, err := os.UserHomeDir();

@@ -109,6 +109,11 @@ var laravelCmd = &cobra.Command{
 			log.Fatalf("Error creating .env file: %v", err)
 		}
 
+		devContainerFilePath := filepath.Join(targetPath, ".devcontainer")
+		if err := createDevContainerFile(containerName, devContainerFilePath); err != nil {
+			log.Fatalf("Error creating devcontainer.json file: %v", err)
+		}
+
 		if err := bootContainer(targetPath); err != nil {
 			log.Fatalf("Error booting container: %v", err)
 		}
@@ -120,6 +125,19 @@ var laravelCmd = &cobra.Command{
 		if err := execCommand("docker", commandArgs, targetPath, indicator, completeMessage); err != nil {
 			log.Fatalf("Error creating new laravel project: %v", err)
 		}
+
+		if err := updateEnvSrcPath(targetPath, srcPath + "/" + containerName); err != nil {
+			log.Fatalf("Error updating .env file: %v", err)
+		}
+
+		if err := rebbuildContainer(targetPath); err != nil {
+			log.Fatalf("Error rebuilding container: %v", err)
+		}
+
+		clearTerminal()
+
+		fmt.Printf("\r\033[KLaravel container created successfully ✓\n")
+		fmt.Printf("Access the project at http://localhost:%d\n", port)
 	},
 }
 
@@ -137,7 +155,7 @@ func init() {
 	// laravelCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func validateLaravelProjectName(val interface{}) error {
+func validateLaravelProjectName(val any) error {
 	str := val.(string)
 
 	if str == "laravel" {
