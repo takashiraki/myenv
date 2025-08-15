@@ -1,30 +1,50 @@
 /*
 Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
-
+var version = "0.0.2"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "myenv",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	Version: version,
+	Short: "A CLI tool for managing containerized development environments",
+	Long: `
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                                  MyEnv v` + version + `                                 ║
+║                                                                               ║
+║  🚀 A CLI tool for managing containerized development environments            ║
+║                                                                               ║
+║  • Automated Docker container setup                                           ║
+║  • Smart port management & conflict prevention                                ║
+║  • VS Code integration with devcontainer support                              ║
+║  • Pre-configured development templates                                       ║
+║                                                                               ║
+║  Get started: myenv laravel                                                   ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+`,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Print(cmd.Long)
+		fmt.Println("\nUsage:")
+		fmt.Println("  myenv [command]")
+		fmt.Println("\nAvailable Commands:")
+		fmt.Println("  laravel     Create a new Laravel container")
+		fmt.Println("  version     Show version information")
+		fmt.Println("  completion  Generate the autocompletion script for the specified shell")
+		fmt.Println("  help        Help about any command")
+		fmt.Println("\nFlags:")
+		fmt.Println("  -h, --help     help for myenv")
+		fmt.Println("  -v, --version  version for myenv")
+		fmt.Println("\nUse \"myenv [command] --help\" for more information about a command.")
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -45,7 +65,7 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().BoolP("version", "v", false, "Show version information")
 }
 
 
