@@ -138,6 +138,9 @@ var laravelCmd = &cobra.Command{
 
 		fmt.Printf("\r\033[KLaravel container created successfully ✓\n")
 		fmt.Printf("Access the project at http://localhost:%d\n", port)
+		fmt.Printf("Project path: %s\n", targetPath)
+
+		execCommand("code", []string{targetPath}, targetPath, "Opening project in VSCode", "Project opened in VSCode")
 	},
 }
 
