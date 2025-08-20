@@ -1,4 +1,4 @@
-# MyEnv
+# myenv
 
 A CLI tool for rapidly creating and managing containerized development environments with Docker.
 
