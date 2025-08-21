@@ -7,14 +7,16 @@ import (
 	"fmt"
 	"log"
 
+	"myenv/internal/framework"
+	"myenv/internal/lang/php"
+
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
-	"myenv/internal/lang/php"
 )
 
 var (
 	lang      string
-	frameWork string
+	fw string
 )
 
 // initCmd represents the init command
@@ -48,7 +50,24 @@ to quickly create a Cobra application.`,
 
 		switch lang {
 		case "PHP":
-			php.PHP()
+			if fw != "" {
+				framework.PHPFramework(fw)
+			} else {
+				fwPrompt := &survey.Select{
+					Message: "Select the framework you want to use: ",
+					Options: []string{"Laravel", "None"},
+				}
+
+				if err := survey.AskOne(fwPrompt, &fw); err != nil {
+					log.Fatal(err)
+				}
+
+				if fw == "None" {
+					php.PHP()
+				} else {
+					framework.PHPFramework(fw)
+				}
+			}
 		default:
 			log.Fatal("Unsupported language selected.")
 		}
@@ -67,5 +86,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	initCmd.Flags().StringVarP(&lang, "lang", "l", "", "Specify the programming language (e.g., PHP)")
-	initCmd.Flags().StringVarP(&frameWork, "framework", "f", "", "Specify the programming language (e.g., Laravel)")
+	initCmd.Flags().StringVarP(&fw, "framework", "f", "", "Specify the programming language (e.g., Laravel)")
 }
