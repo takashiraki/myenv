@@ -50,6 +50,8 @@ func createProject() {
 		log.Fatal(err)
 	}
 
+	utils.ClearTerminal()
+
 	fmt.Println(`
  ____  _   _ ____  
 |  _ \| | | |  _ \ 
