@@ -52,23 +52,27 @@ func createProject() {
 
 	utils.ClearTerminal()
 
-	fmt.Println(`
+	fmt.Print(`
  ____  _   _ ____  
 |  _ \| | | |  _ \ 
 | |_) | |_| | |_) |
 |  __/|  _  |  __/ 
 |_|   |_| |_|_|    
+
 `)
 
-	fmt.Println("--------------------------------")
-	fmt.Println("Configuration")
-	fmt.Printf("Container name : %s\n", containerName)
-	fmt.Println("--------------------------------")
+	fmt.Println("╔════════════════════════════════════════╗")
+	fmt.Println("║             Configuration              ║")
+	fmt.Println("╠════════════════════════════════════════╣")
+	fmt.Printf("║ Container name : %-21s ║\n", containerName)
+	fmt.Println("║ Framework      : None                  ║")
+	fmt.Println("║ Language       : PHP                   ║")
+	fmt.Println("╚════════════════════════════════════════╝")
 
 	var confirmResult bool
 
 	confirmPrompt := &survey.Confirm{
-		Message: "Is the configuration correct?",
+		Message: "Is it okay to start building the environment with this configuration?",
 	}
 
 	if err := survey.AskOne(confirmPrompt, &confirmResult); err != nil {
