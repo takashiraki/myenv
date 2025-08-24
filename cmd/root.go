@@ -4,7 +4,9 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"myenv/internal/config"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -31,6 +33,7 @@ var rootCmd = &cobra.Command{
 ╚═══════════════════════════════════════════════════════╝
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		config.GetConfig(strings.TrimPrefix(version, "v"))
 		cmd.Help()
 		// fmt.Println(cmd.Long)
 	},

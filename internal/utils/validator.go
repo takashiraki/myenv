@@ -19,14 +19,14 @@ func ValidateProjectName(val any) error {
 
 	targetPath := filepath.Join(devPath, str)
 
-	if dirIsExists(targetPath) {
+	if DirIsExists(targetPath) {
 		return errors.New("project name already exists")
 	}
 
 	return nil
 }
 
-func dirIsExists(dir string) bool {
+func DirIsExists(dir string) bool {
 	_, err := os.Stat(dir)
 	return !os.IsNotExist(err)
 }

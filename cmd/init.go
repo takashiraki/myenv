@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 
+	"myenv/internal/config"
 	"myenv/internal/framework"
 	"myenv/internal/lang/php"
 
@@ -15,8 +16,8 @@ import (
 )
 
 var (
-	lang      string
-	fw string
+	lang string
+	fw   string
 )
 
 // initCmd represents the init command
@@ -30,6 +31,24 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if err := config.CheckConfig(); err != nil {
+			fmt.Print(`
+╔═══════════════════════════════════════════════════════╗
+║              ⚠️  Configuration Missing                 ║
+║                                                       ║
+║  No configuration found. Please run the following     ║
+║  command first to initialize myenv:                   ║
+║                                                       ║
+║  🚀 myenv                                             ║
+║                                                       ║
+║  This will create the necessary configuration         ║
+║  files in ~/.config/myenv/                            ║
+╚═══════════════════════════════════════════════════════╝
+
+`)
+			return
+		}
+
 		clearTerminal()
 
 		if lang == "" {
