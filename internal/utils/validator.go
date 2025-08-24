@@ -1,9 +1,11 @@
 package utils
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 func ValidateProjectName(val any) error {
@@ -29,4 +31,77 @@ func ValidateProjectName(val any) error {
 func DirIsExists(dir string) bool {
 	_, err := os.Stat(dir)
 	return !os.IsNotExist(err)
+}
+
+func ValidatePort(val any) error {
+	var port int
+	
+	switch v := val.(type) {
+	case int:
+		port = v
+	case string:
+		var err error
+		port, err = strconv.Atoi(v)
+		if err != nil {
+			return errors.New("invalid port format: must be a valid integer")
+		}
+	default:
+		return errors.New("invalid type: port must be an integer or string")
+	}
+
+	if port < 1 || port > 65535 {
+		return errors.New("port must be between 1 and 65535")
+	}
+
+	if port < 1024 {
+		return errors.New("port must be greater than 1024")
+	}
+
+	usedPorts, err := getUsedPort()
+
+	if err != nil {
+		return err
+	}
+
+	for _, useusedPort := range usedPorts {
+		if val == useusedPort {
+			return errors.New("port is already in use")
+		}
+	}
+
+	return nil
+}
+
+func getUsedPort() ([]int, error) {
+	homeDIr, err := os.UserHomeDir()
+
+	if err != nil {
+		return nil, errors.New("error getting home directory")
+	}
+
+	targetPath := filepath.Join(homeDIr, ".config", "myenv", "config.json")
+
+	data, err := os.ReadFile(targetPath)
+
+	if err != nil {
+		return nil, errors.New("error reading config file")
+	}
+
+	var config struct {
+		Project map[string]struct {
+			Port int `json:"port"`
+		} `json:"projects"`
+	}
+
+	if err := json.Unmarshal(data, &config); err != nil {
+		return nil, errors.New("error parsing config file")
+	}
+
+	var usedPorts []int
+
+	for _, project := range config.Project {
+		usedPorts = append(usedPorts, project.Port)
+	}
+
+	return usedPorts, nil
 }

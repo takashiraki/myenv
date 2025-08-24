@@ -50,6 +50,21 @@ func createProject() {
 		log.Fatal(err)
 	}
 
+	containerPort := 0
+	containerPortPrompt := &survey.Input{
+		Message: "Enter the port of PHP : ",
+	}
+
+	err = survey.AskOne(
+		containerPortPrompt, &containerPort,
+		survey.WithValidator(survey.Required),
+		survey.WithValidator(utils.ValidatePort),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	utils.ClearTerminal()
 
 	fmt.Print(`
@@ -65,6 +80,7 @@ func createProject() {
 	fmt.Println("║             Configuration              ║")
 	fmt.Println("╠════════════════════════════════════════╣")
 	fmt.Printf("║ Container name : %-21s ║\n", containerName)
+	fmt.Printf("║ Port           : %-21d ║\n", containerPort)
 	fmt.Println("║ Framework      : None                  ║")
 	fmt.Println("║ Language       : PHP                   ║")
 	fmt.Println("╚════════════════════════════════════════╝")
