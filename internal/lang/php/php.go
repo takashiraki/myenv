@@ -3,10 +3,26 @@ package php
 import (
 	"fmt"
 	"log"
+	"myenv/internal/config"
 	"myenv/internal/utils"
+	"os"
+	"path/filepath"
 
 	"github.com/AlecAivazis/survey/v2"
 )
+
+type PHPProjectDetail struct {
+	Name    string  `json:"container_name"`
+	Port    int     `json:"container_port"`
+	Path    string  `json:"path"`
+	Lang    string  `json:"lang"`
+	Fw      string  `json:"framework"`
+	Options []string `json:"options"`
+}
+
+type PHPProject struct {
+	Project PHPProjectDetail `json:"project"`
+}
 
 func PHP() {
 	utils.ClearTerminal()
@@ -98,5 +114,29 @@ func createProject() {
 	if !confirmResult {
 		fmt.Println("Please try again")
 		createProject()
+	}
+
+	fw := "none"
+	lang := "php"
+	options := []string{
+		"new",
+	}
+
+	homeDir, err := os.UserHomeDir()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	path := filepath.Join(homeDir, "dev", containerName)
+
+	createConfigFile(containerName, containerPort, path, lang, fw, options)
+}
+
+func createConfigFile(containerName string, containerPort int, path string, lang string, fw string, options []string) {
+	err := config.AddProjectConfig(containerName, containerPort, path, lang, fw, options)
+
+	if err != nil {
+		log.Fatal(err)
 	}
 }

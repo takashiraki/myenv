@@ -63,8 +63,8 @@ func ValidatePort(val any) error {
 		return err
 	}
 
-	for _, useusedPort := range usedPorts {
-		if val == useusedPort {
+	for _, usedPort := range usedPorts {
+		if port == usedPort {
 			return errors.New("port is already in use")
 		}
 	}
@@ -88,8 +88,8 @@ func getUsedPort() ([]int, error) {
 	}
 
 	var config struct {
-		Project map[string]struct {
-			Port int `json:"port"`
+		Projects map[string]struct {
+			ContainerPort int `json:"container_port"`
 		} `json:"projects"`
 	}
 
@@ -99,8 +99,8 @@ func getUsedPort() ([]int, error) {
 
 	var usedPorts []int
 
-	for _, project := range config.Project {
-		usedPorts = append(usedPorts, project.Port)
+	for _, project := range config.Projects {
+		usedPorts = append(usedPorts, project.ContainerPort)
 	}
 
 	return usedPorts, nil
