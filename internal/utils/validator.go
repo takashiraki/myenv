@@ -9,20 +9,27 @@ import (
 )
 
 func ValidateProjectName(val any) error {
-	str := val.(string)
+	var name string
 
-	homeDir, err := os.UserHomeDir()
-
-	if err != nil {
-		return errors.New("error getting home directory")
+	switch v := val.(type) {
+	case string:
+		name = v
+	case int:
+		name = strconv.Itoa(v)
+	default:
+		return errors.New("invalid type: project name must be a string or integer")
 	}
 
-	devPath := filepath.Join(homeDir, "dev")
+	usedProjects, err := getUsedProject()
 
-	targetPath := filepath.Join(devPath, str)
+	if err != nil {
+		return err
+	}
 
-	if DirIsExists(targetPath) {
-		return errors.New("project name already exists")
+	for _, usedProject := range usedProjects {
+		if name == usedProject {
+			return errors.New("project name is already in use")
+		}
 	}
 
 	return nil
@@ -35,7 +42,7 @@ func DirIsExists(dir string) bool {
 
 func ValidatePort(val any) error {
 	var port int
-	
+
 	switch v := val.(type) {
 	case int:
 		port = v
@@ -104,4 +111,38 @@ func getUsedPort() ([]int, error) {
 	}
 
 	return usedPorts, nil
+}
+
+func getUsedProject() ([]string, error) {
+	homeDir, err := os.UserHomeDir()
+
+	if err != nil {
+		return nil, errors.New("error getting home directory")
+	}
+
+	targetPath := filepath.Join(homeDir, ".config", "myenv", "config.json")
+
+	data, err := os.ReadFile(targetPath)
+
+	if err != nil {
+		return nil, errors.New("error reading config file")
+	}
+
+	var config struct {
+		Projects map[string]struct {
+			ContainerName string `json:"container_name"`
+		} `json:"projects"`
+	}
+
+	if err := json.Unmarshal(data, &config); err != nil {
+		return nil, errors.New("error parsing config file")
+	}
+
+	var usedProjects []string
+
+	for _, project := range config.Projects {
+		usedProjects = append(usedProjects, project.ContainerName)
+	}
+
+	return usedProjects, nil
 }
