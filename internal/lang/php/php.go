@@ -6,17 +6,18 @@ import (
 	"myenv/internal/config"
 	"myenv/internal/utils"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/AlecAivazis/survey/v2"
 )
 
 type PHPProjectDetail struct {
-	Name    string  `json:"container_name"`
-	Port    int     `json:"container_port"`
-	Path    string  `json:"path"`
-	Lang    string  `json:"lang"`
-	Fw      string  `json:"framework"`
+	Name    string   `json:"container_name"`
+	Port    int      `json:"container_port"`
+	Path    string   `json:"path"`
+	Lang    string   `json:"lang"`
+	Fw      string   `json:"framework"`
 	Options []string `json:"options"`
 }
 
@@ -131,6 +132,26 @@ func createProject() {
 	path := filepath.Join(homeDir, "dev", containerName)
 
 	createConfigFile(containerName, containerPort, path, lang, fw, options)
+
+	targetRepo := "https://github.com/takashiraki/myenv.git"
+
+	// Clone repository
+	done := make(chan bool)
+
+	go utils.ShowLoadingIndicator("Cloning repository", done)
+
+	cmd := exec.Command("git", "clone", targetRepo, path)
+
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		done <- true
+		log.Fatalf("\r\033[Kerror cloning repository: %v\nOutput: %s", err, output)
+	}
+
+	done <- true
+
+	fmt.Printf("\r\033[KCloning repository completed ✓\n")
 }
 
 func createConfigFile(containerName string, containerPort int, path string, lang string, fw string, options []string) {
