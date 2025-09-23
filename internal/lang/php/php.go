@@ -134,7 +134,7 @@ func createProject() {
 
 	createConfigFile(containerName, containerPort, path, lang, fw, options)
 
-	targetRepo := "https://github.com/takashiraki/myenv.git"
+	targetRepo := "https://github.com/takashiraki/docker_php.git"
 
 	// Clone repository
 	done := make(chan bool)
@@ -153,6 +153,35 @@ func createProject() {
 	done <- true
 
 	fmt.Printf("\r\033[KCloning repository completed ✓\n")
+
+	done = make(chan bool)
+
+	go utils.ShowLoadingIndicator("Creating .env file", done)
+
+	envExampleFilePath := filepath.Join(path, ".env.example")
+
+	if _, err := os.Stat(envExampleFilePath); os.IsNotExist(err) {
+		done <- true
+		log.Fatalf("\r\033[Kerror: .env.example file does not exist in the repository")
+	}
+
+	envFilePath := filepath.Join(path, ".env")
+
+	if _, err := os.Stat(envFilePath); err == nil {
+		done <- true
+		log.Fatalf("\r\033[Kerror: .env file already exists")
+	}
+
+	cmd = exec.Command("cp", envExampleFilePath, envFilePath)
+
+	if _, err := cmd.CombinedOutput(); err != nil {
+		done <- true
+		log.Fatalf("\r\033[Kerror creating .env file: %v", err)
+	}
+
+	done <- true
+
+	fmt.Printf("\r\033[KCreating .env file completed ✓\n")
 }
 
 func createConfigFile(containerName string, containerPort int, path string, lang string, fw string, options []string) {
