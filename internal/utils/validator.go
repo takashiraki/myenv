@@ -35,6 +35,31 @@ func ValidateProjectName(val any) error {
 	return nil
 }
 
+func ValidateDirectory(val any) error {
+	var dir string
+
+	switch v := val.(type) {
+	case string:
+		dir = v
+	default:
+		return errors.New("invalid type: directory must be a string.")
+	}
+
+	homeDir, err := os.UserHomeDir()
+
+	if err != nil {
+		return errors.New("error getting home directory")
+	}
+
+	targetDir := filepath.Join(homeDir, "dev", dir)
+
+	if err := checkDir(targetDir); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func DirIsExists(dir string) bool {
 	_, err := os.Stat(dir)
 	return !os.IsNotExist(err)

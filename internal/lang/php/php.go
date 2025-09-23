@@ -61,6 +61,7 @@ func createProject() {
 		survey.WithValidator(survey.MinLength(3)),
 		survey.WithValidator(survey.MaxLength(20)),
 		survey.WithValidator(utils.ValidateProjectName),
+		survey.WithValidator(utils.ValidateDirectory),
 	)
 
 	if err != nil {
