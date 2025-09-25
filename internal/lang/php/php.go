@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
 )
@@ -182,6 +183,52 @@ func createProject() {
 	done <- true
 
 	fmt.Printf("\r\033[KCreating .env file completed ✓\n")
+
+	done = make(chan bool)
+
+	go utils.ShowLoadingIndicator("Setup env file", done)
+
+	repositoryPath := "src"
+	port := 80
+
+	content, err := os.ReadFile(envFilePath)
+
+	if err != nil {
+		done <- true
+		log.Fatalf("\r\033[Kerror reading .env file: %v", err)
+	}
+
+	updateContent := string(content)
+	updateContent = strings.ReplaceAll(updateContent, "REPOSITORY_PATH=", fmt.Sprintf("REPOSITORY_PATH=%s", repositoryPath))
+	updateContent = strings.ReplaceAll(updateContent, "CONTAINER_NAME=", fmt.Sprintf("CONTAINER_NAME=%s", containerName))
+	updateContent = strings.ReplaceAll(updateContent, "HOST_PORT=", fmt.Sprintf("HOST_PORT=%d", containerPort))
+	updateContent = strings.ReplaceAll(updateContent, "CONTAINER_PORT=", fmt.Sprintf("CONTAINER_PORT=%d", port))
+
+	if err := os.WriteFile(envFilePath, []byte(updateContent), 0644); err != nil {
+		done <- true
+		log.Fatalf("\r\033[Kerror writing .env file: %v", err)
+	}
+
+	done <- true
+
+	fmt.Printf("\r\033[KSetup .env file completed ✓\n")
+
+	done = make(chan bool)
+
+	go utils.ShowLoadingIndicator("Starting Docker containers", done)
+
+	cmd = exec.Command("docker", "compose", "up", "-d")
+
+	cmd.Dir = path
+
+	if _, err := cmd.CombinedOutput(); err != nil {
+		done <- true
+		log.Fatalf("\r\033[Kerror starting Docker containers: %v", err)
+	}
+
+	done <- true
+
+	fmt.Printf("\r\033[KStarting Docker containers completed ✓\n")
 }
 
 func createConfigFile(containerName string, containerPort int, path string, lang string, fw string, options []string) {
