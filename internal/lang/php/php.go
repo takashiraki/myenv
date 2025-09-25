@@ -229,6 +229,31 @@ func createProject() {
 	done <- true
 
 	fmt.Printf("\r\033[KStarting Docker containers completed ✓\n")
+
+	done = make(chan bool)
+
+	go utils.ShowLoadingIndicator("Creating container workspace", done)
+
+	devContainerExameplePath := filepath.Join(path, ".devcontainer", "devcontainer.json.example")
+	devContainerPath := filepath.Join(path, ".devcontainer", "devcontainer.json")
+
+	if _, err := os.Stat(devContainerExameplePath); os.IsNotExist(err) {
+		log.Fatalf("error: .devcontainer.json.example file does not exist in the repository")
+	}
+
+	if _, err := os.Stat(devContainerPath); err == nil {
+		log.Fatalf("error: .devcontainer.json file already exists")
+	}
+
+	cmd = exec.Command("cp", devContainerExameplePath, devContainerPath)
+
+	if _, err := cmd.CombinedOutput(); err != nil {
+		done <- true
+		log.Fatalf("\r\033[Kerror creating .devcontainer.json file: %v", err)
+	}
+
+	done <- true
+	fmt.Printf("\r\033[KCreating container workspace completed ✓\n")
 }
 
 func createConfigFile(containerName string, containerPort int, path string, lang string, fw string, options []string) {
