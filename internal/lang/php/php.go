@@ -254,6 +254,30 @@ func createProject() {
 
 	done <- true
 	fmt.Printf("\r\033[KCreating container workspace completed ✓\n")
+
+	utils.ClearTerminal()
+
+	fmt.Print(`
+ ______ ______ __   __ ______ __     ______ ______ ______
+|      |      |  |_|  |      |  |   |      |      |      |
+|   ---|  ____|       |   ___|  |   |   ---|_     |   ---|
+|     _|     _|       |  |___|  |___|   ---|  |    |     _|
+|__| |_|_____|__|_|__|______|______|______|__|____|__| |_|
+
+`)
+
+	fmt.Println("╔════════════════════════════════════════════════════════╗")
+	fmt.Println("║                   🎉 SETUP COMPLETE! 🎉                ║")
+	fmt.Println("╠════════════════════════════════════════════════════════╣")
+	fmt.Printf("║ 📦 Container Name : %-34s ║\n", containerName)
+	fmt.Printf("║ 📂 Repository Path: %-34s ║\n", path)
+	fmt.Printf("║ 🌐 Port          : %-35d ║\n", containerPort)
+	fmt.Println("╠════════════════════════════════════════════════════════╣")
+	fmt.Println("║                     Next Steps:                        ║")
+	fmt.Printf("║  • Open VS Code: code %s                           ║\n", containerName)
+	fmt.Printf("║  • Access app  : http://localhost:%-8d             ║\n", containerPort)
+	fmt.Println("║  • Start coding in the devcontainer! 🚀                ║")
+	fmt.Println("╚════════════════════════════════════════════════════════╝")
 }
 
 func createConfigFile(containerName string, containerPort int, path string, lang string, fw string, options []string) {
