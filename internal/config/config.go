@@ -8,19 +8,19 @@ import (
 )
 
 type Project struct {
-	ContainerName string `json:"container_name"`
-	ContainerPort int `json:"container_port"`
-	Path string `json:"path"`
-	Lang string `json:"lang"`
-	Fw string `json:"framework"`
-	Options []string `json:"options"`
+	ContainerName string   `json:"container_name"`
+	ContainerPort int      `json:"container_port"`
+	Path          string   `json:"path"`
+	Lang          string   `json:"lang"`
+	Fw            string   `json:"framework"`
+	Options       []string `json:"options"`
 }
 
 type Config struct {
-	Lang             string `json:"lang"`
-	Version          string `json:"version"`
-	ContainerRuntime string `json:"containerRuntime"`
-	Projects map[string]Project `json:"projects"`
+	Lang             string             `json:"lang"`
+	Version          string             `json:"version"`
+	ContainerRuntime string             `json:"containerRuntime"`
+	Projects         map[string]Project `json:"projects"`
 }
 
 func GetConfig(version string) {
@@ -94,8 +94,8 @@ func LoadConfig() (*Config, error) {
 		return nil, err
 	}
 
-	envFilePath := filepath.Join(homeDir, ".config","myenv","config.json")
-	
+	envFilePath := filepath.Join(homeDir, ".config", "myenv", "config.json")
+
 	if _, err := os.Stat(envFilePath); os.IsNotExist(err) {
 		return nil, err
 	}
@@ -114,14 +114,14 @@ func LoadConfig() (*Config, error) {
 	return &config, nil
 }
 
-func SaveConfig(config *Config)error {
+func SaveConfig(config *Config) error {
 	homeDir, err := os.UserHomeDir()
 
 	if err != nil {
 		panic(err)
 	}
 
-	envFilePath := filepath.Join(homeDir, ".config","myenv","config.json")
+	envFilePath := filepath.Join(homeDir, ".config", "myenv", "config.json")
 
 	data, err := json.MarshalIndent(config, "", "  ")
 
@@ -136,7 +136,7 @@ func SaveConfig(config *Config)error {
 	return nil
 }
 
-func AddProjectConfig(containerName string, containerPort int, path string, lang string, fw string, options []string)error {
+func AddProjectConfig(containerName string, containerPort int, path string, lang string, fw string, options []string) error {
 	config, err := LoadConfig()
 
 	if err != nil {
@@ -150,10 +150,10 @@ func AddProjectConfig(containerName string, containerPort int, path string, lang
 	config.Projects[containerName] = Project{
 		ContainerName: containerName,
 		ContainerPort: containerPort,
-		Path: path,
-		Lang: lang,
-		Fw: fw,
-		Options: options,
+		Path:          path,
+		Lang:          lang,
+		Fw:            fw,
+		Options:       options,
 	}
 
 	if err := SaveConfig(config); err != nil {

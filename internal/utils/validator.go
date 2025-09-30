@@ -105,13 +105,13 @@ func ValidatePort(val any) error {
 }
 
 func getUsedPort() ([]int, error) {
-	homeDIr, err := os.UserHomeDir()
+	homeDir, err := os.UserHomeDir()
 
 	if err != nil {
 		return nil, errors.New("error getting home directory")
 	}
 
-	targetPath := filepath.Join(homeDIr, ".config", "myenv", "config.json")
+	targetPath := filepath.Join(homeDir, ".config", "myenv", "config.json")
 
 	data, err := os.ReadFile(targetPath)
 

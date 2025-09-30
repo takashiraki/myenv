@@ -234,10 +234,10 @@ func createProject() {
 
 	go utils.ShowLoadingIndicator("Creating container workspace", done)
 
-	devContainerExameplePath := filepath.Join(path, ".devcontainer", "devcontainer.json.example")
+	devContainerExamplePath := filepath.Join(path, ".devcontainer", "devcontainer.json.example")
 	devContainerPath := filepath.Join(path, ".devcontainer", "devcontainer.json")
 
-	if _, err := os.Stat(devContainerExameplePath); os.IsNotExist(err) {
+	if _, err := os.Stat(devContainerExamplePath); os.IsNotExist(err) {
 		log.Fatalf("error: .devcontainer.json.example file does not exist in the repository")
 	}
 
@@ -245,7 +245,7 @@ func createProject() {
 		log.Fatalf("error: .devcontainer.json file already exists")
 	}
 
-	cmd = exec.Command("cp", devContainerExameplePath, devContainerPath)
+	cmd = exec.Command("cp", devContainerExamplePath, devContainerPath)
 
 	if _, err := cmd.CombinedOutput(); err != nil {
 		done <- true
