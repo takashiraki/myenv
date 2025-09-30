@@ -29,7 +29,7 @@ var rootCmd = &cobra.Command{
 ║  • VS Code integration with devcontainer support      ║
 ║  • Pre-configured development templates               ║
 ║                                                       ║
-║  Get started: myenv laravel                           ║
+║  Get started: myenv init                              ║
 ╚═══════════════════════════════════════════════════════╝
 `,
 	Run: func(cmd *cobra.Command, args []string) {
