@@ -10,6 +10,7 @@ import (
 	"myenv/internal/config"
 	"myenv/internal/framework"
 	"myenv/internal/lang/php"
+	"myenv/internal/utils"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
@@ -49,7 +50,7 @@ to quickly create a Cobra application.`,
 			return
 		}
 
-		clearTerminal()
+		utils.ClearTerminal()
 
 		if lang == "" {
 			fmt.Println("Initializing your environment...")

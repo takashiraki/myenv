@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "v0.1.0"
+var version = "v0.1.1"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -29,7 +29,7 @@ var rootCmd = &cobra.Command{
 ║  • VS Code integration with devcontainer support      ║
 ║  • Pre-configured development templates               ║
 ║                                                       ║
-║  Get started: myenv laravel                           ║
+║  Get started: myenv init                              ║
 ╚═══════════════════════════════════════════════════════╝
 `,
 	Run: func(cmd *cobra.Command, args []string) {

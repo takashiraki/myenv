@@ -252,6 +252,22 @@ func createProject() {
 		log.Fatalf("\r\033[Kerror creating .devcontainer.json file: %v", err)
 	}
 
+	devContainerContents, err := os.ReadFile(devContainerPath)
+
+	if err != nil {
+		done <- true
+		log.Fatalf("\r\033[Kerror reading .devcontainer.json file: %v", err)
+	}
+
+	updateDevContainerContents := string(devContainerContents)
+
+	updateDevContainerContents = strings.ReplaceAll(updateDevContainerContents, `"name": "php debug",`, fmt.Sprintf(`"name": "%s",`, containerName))
+
+	if err := os.WriteFile(devContainerPath, []byte(updateDevContainerContents), 0644); err != nil {
+		done <- true
+		log.Fatalf("\r\033[Kerror writing .devcontainer.json file: %v", err)
+	}
+
 	done <- true
 	fmt.Printf("\r\033[KCreating container workspace completed ✓\n")
 
@@ -274,8 +290,8 @@ func createProject() {
 	fmt.Printf("║ 🌐 Port          : %-35d ║\n", containerPort)
 	fmt.Println("╠════════════════════════════════════════════════════════╣")
 	fmt.Println("║                     Next Steps:                        ║")
-	fmt.Printf("║  • Open VS Code: code %s                           ║\n", containerName)
-	fmt.Printf("║  • Access app  : http://localhost:%-8d             ║\n", containerPort)
+	fmt.Printf("║  • Open VS Code: code %-32s ║\n", path)
+	fmt.Printf("║  • Access app  : http://localhost:%-20d ║\n", containerPort)
 	fmt.Println("║  • Start coding in the devcontainer! 🚀                ║")
 	fmt.Println("╚════════════════════════════════════════════════════════╝")
 }
