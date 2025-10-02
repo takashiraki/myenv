@@ -294,6 +294,29 @@ func createProject() {
 	fmt.Printf("║  • Access app  : http://localhost:%-20d ║\n", containerPort)
 	fmt.Println("║  • Start coding in the devcontainer! 🚀                ║")
 	fmt.Println("╚════════════════════════════════════════════════════════╝")
+
+	codeVersionCommand := exec.Command("code", "--version")
+
+	if _, err = codeVersionCommand.CombinedOutput(); err == nil {
+
+		var openInVSCode bool
+
+		openInVSCodePrompt := &survey.Confirm{
+			Message: "Do you want to open the project in VS Code?",
+		}
+
+		if err := survey.AskOne(openInVSCodePrompt, &openInVSCode); err != nil {
+			log.Fatal(err)
+		}
+
+		if openInVSCode {
+			openCommand := exec.Command("code", path)
+
+			if _, err := openCommand.CombinedOutput(); err != nil {
+				log.Fatalf("error opening project in VS Code: %v", err)
+			}
+		}
+	}
 }
 
 func createConfigFile(containerName string, containerPort int, path string, lang string, fw string, options []string) {
