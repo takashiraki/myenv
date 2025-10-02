@@ -8,12 +8,12 @@ import (
 )
 
 type Project struct {
-	ContainerName string   `json:"container_name"`
-	ContainerPort int      `json:"container_port"`
-	Path          string   `json:"path"`
-	Lang          string   `json:"lang"`
-	Fw            string   `json:"framework"`
-	Options       []string `json:"options"`
+	ContainerName string            `json:"container_name"`
+	ContainerPort int               `json:"container_port"`
+	Path          string            `json:"path"`
+	Lang          string            `json:"lang"`
+	Fw            string            `json:"framework"`
+	Options       map[string]string `json:"options"`
 }
 
 type Config struct {
@@ -136,7 +136,7 @@ func SaveConfig(config *Config) error {
 	return nil
 }
 
-func AddProjectConfig(containerName string, containerPort int, path string, lang string, fw string, options []string) error {
+func AddProjectConfig(containerName string, containerPort int, path string, lang string, fw string, options map[string]string) error {
 	config, err := LoadConfig()
 
 	if err != nil {
