@@ -14,12 +14,12 @@ import (
 )
 
 type PHPProjectDetail struct {
-	Name    string   `json:"container_name"`
-	Port    int      `json:"container_port"`
-	Path    string   `json:"path"`
-	Lang    string   `json:"lang"`
-	Fw      string   `json:"framework"`
-	Options []string `json:"options"`
+	Name    string            `json:"container_name"`
+	Port    int               `json:"container_port"`
+	Path    string            `json:"path"`
+	Lang    string            `json:"lang"`
+	Fw      string            `json:"framework"`
+	Options map[string]string `json:"options"`
 }
 
 type PHPProject struct {
@@ -121,8 +121,8 @@ func createProject() {
 
 	fw := "none"
 	lang := "php"
-	options := []string{
-		"new",
+	options := map[string]string{
+		"type": "new",
 	}
 
 	homeDir, err := os.UserHomeDir()
@@ -319,7 +319,7 @@ func createProject() {
 	}
 }
 
-func createConfigFile(containerName string, containerPort int, path string, lang string, fw string, options []string) {
+func createConfigFile(containerName string, containerPort int, path string, lang string, fw string, options map[string]string) {
 	err := config.AddProjectConfig(containerName, containerPort, path, lang, fw, options)
 
 	if err != nil {

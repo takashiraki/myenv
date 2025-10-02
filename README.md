@@ -4,14 +4,14 @@ A CLI tool for rapidly creating and managing containerized development environme
 
 ## Overview
 
-MyEnv streamlines the process of setting up development environments by automating Docker container creation, port management, and project configuration. Currently supports Laravel projects with plans to expand to other frameworks.
+MyEnv streamlines the process of setting up development environments by automating Docker container creation, port management, and project configuration. Currently supports PHP projects including Laravel and other frameworks.
 
 ## Features
 
-- **Interactive Setup** - Guided project creation with input validation
+- **Interactive Setup** - Guided project creation with language and framework selection
 - **Automated Container Management** - Docker Compose integration with health checks
 - **Port Conflict Prevention** - Smart port allocation and validation
-- **VS Code Integration** - Automatic project opening in development environment
+- **VS Code Integration** - Automatic project opening in development container
 - **Project Templates** - Pre-configured development stacks
 
 ## Installation
@@ -22,24 +22,33 @@ go install github.com/takashiraki/myenv@latest
 
 ## Usage
 
-### Create a Laravel Project
+### Create a New Project
 
 ```bash
-myenv laravel
+myenv init
+```
+
+You can also specify the language and framework using flags:
+
+```bash
+myenv init --lang PHP --framework Laravel
 ```
 
 This will:
-1. Prompt for container name and port configuration
-2. Clone the Laravel Docker template
-3. Generate environment configuration files
-4. Build and start the containers
-5. Create a new Laravel application
-6. Open the project in VS Code
+1. Prompt for language and framework selection (if not specified)
+2. Ask for container name and port configuration
+3. Clone the appropriate Docker template
+4. Generate environment configuration files
+5. Build and start the containers
+6. Create a new project with the selected framework
+7. Optionally open the project in VS Code
 
 ### Available Commands
 
-- `myenv laravel` - Create a new Laravel development environment
+- `myenv init` - Create a new development environment
+- `myenv init -l PHP -f Laravel` - Create a Laravel project directly
 - `myenv --help` - Show available commands and options
+- `myenv --version` - Show version information
 
 ## Requirements
 
