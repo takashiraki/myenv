@@ -14,12 +14,12 @@ import (
 )
 
 type PHPProjectDetail struct {
-	Name    string   `json:"container_name"`
-	Port    int      `json:"container_port"`
-	Path    string   `json:"path"`
-	Lang    string   `json:"lang"`
-	Fw      string   `json:"framework"`
-	Options []string `json:"options"`
+	Name    string            `json:"container_name"`
+	Port    int               `json:"container_port"`
+	Path    string            `json:"path"`
+	Lang    string            `json:"lang"`
+	Fw      string            `json:"framework"`
+	Options map[string]string `json:"options"`
 }
 
 type PHPProject struct {
@@ -121,8 +121,8 @@ func createProject() {
 
 	fw := "none"
 	lang := "php"
-	options := []string{
-		"new",
+	options := map[string]string{
+		"type": "new",
 	}
 
 	homeDir, err := os.UserHomeDir()
@@ -294,9 +294,32 @@ func createProject() {
 	fmt.Printf("║  • Access app  : http://localhost:%-20d ║\n", containerPort)
 	fmt.Println("║  • Start coding in the devcontainer! 🚀                ║")
 	fmt.Println("╚════════════════════════════════════════════════════════╝")
+
+	codeVersionCommand := exec.Command("code", "--version")
+
+	if _, err = codeVersionCommand.CombinedOutput(); err == nil {
+
+		var openInVSCode bool
+
+		openInVSCodePrompt := &survey.Confirm{
+			Message: "Do you want to open the project in VS Code?",
+		}
+
+		if err := survey.AskOne(openInVSCodePrompt, &openInVSCode); err != nil {
+			log.Fatal(err)
+		}
+
+		if openInVSCode {
+			openCommand := exec.Command("code", path)
+
+			if _, err := openCommand.CombinedOutput(); err != nil {
+				log.Fatalf("error opening project in VS Code: %v", err)
+			}
+		}
+	}
 }
 
-func createConfigFile(containerName string, containerPort int, path string, lang string, fw string, options []string) {
+func createConfigFile(containerName string, containerPort int, path string, lang string, fw string, options map[string]string) {
 	err := config.AddProjectConfig(containerName, containerPort, path, lang, fw, options)
 
 	if err != nil {
