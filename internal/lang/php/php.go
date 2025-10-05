@@ -44,6 +44,7 @@ func PHP() {
 	switch clone {
 	case "Yes":
 		fmt.Println("Clone project")
+		cloneProject()
 	case "No":
 		fmt.Println("Create project")
 		createProject()
@@ -325,4 +326,41 @@ func createConfigFile(containerName string, containerPort int, path string, lang
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func cloneProject() {
+	gitRepo := ""
+	gitRepoPrompt := &survey.Input{
+		Message: "Enter the Git repository URL of PHP project : ",
+	}
+
+	err := survey.AskOne(
+		gitRepoPrompt, &gitRepo,
+		survey.WithValidator(survey.Required),
+		survey.WithValidator(utils.ValidateGitRepoUrl),
+		survey.WithValidator(utils.ValidateGitRepoProjectExists),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	containerPort := 0
+	containerPortPrompt := &survey.Input{
+		Message: "Enter the port of PHP : ",
+	}
+
+	portErr := survey.AskOne(
+		containerPortPrompt, &containerPort,
+		survey.WithValidator(survey.Required),
+		survey.WithValidator(utils.ValidatePort),
+	)
+
+	if portErr != nil {
+		log.Fatal(portErr)
+	}
+
+	utils.ClearTerminal()
+
+	println(gitRepo, containerPort)
 }
