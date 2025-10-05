@@ -3,9 +3,12 @@ package utils
 import (
 	"encoding/json"
 	"errors"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 func ValidateProjectName(val any) error {
@@ -170,4 +173,60 @@ func getUsedProject() ([]string, error) {
 	}
 
 	return usedProjects, nil
+}
+
+func ValidateGitRepoUrl(val any) error {
+	var repo string
+
+	switch v := val.(type) {
+	case string:
+		repo = v
+	default:
+		return errors.New("invalid type: git repository must be a string.")
+	}
+
+	u, err := url.Parse(repo)
+
+	if err != nil {
+		return errors.New("invalid git repository URL")
+	}
+
+	if u.Scheme != "https" {
+		return errors.New("invalid git repository URL: must start with https://")
+	}
+
+	if !strings.HasSuffix(repo, ".git") {
+		return errors.New("invalid git repository URL: must end with .git")
+	}
+
+	return nil
+}
+
+func ValidateGitRepoProjectExists(val any) error {
+	var repo string
+
+	switch v := val.(type) {
+	case string:
+		repo = v
+	default:
+		return errors.New("invalid type: git repository must be a string.")
+	}
+
+	url := strings.TrimSuffix(repo, ".git")
+
+	repoName := path.Base(url)
+
+	homeDIr, err := os.UserHomeDir()
+
+	if err != nil {
+		return errors.New("error getting home directory")
+	}
+
+	targetPath := filepath.Join(homeDIr, "dev", repoName)
+
+	if DirIsExists(targetPath) {
+		return errors.New("project with the same name already exists")
+	}
+
+	return nil
 }
