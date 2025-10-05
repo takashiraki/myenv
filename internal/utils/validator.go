@@ -212,9 +212,7 @@ func ValidateGitRepoProjectExists(val any) error {
 		return errors.New("invalid type: git repository must be a string.")
 	}
 
-	url := strings.TrimSuffix(repo, ".git")
-
-	repoName := path.Base(url)
+	repoName := ExtractionRepoName(repo)
 
 	homeDIr, err := os.UserHomeDir()
 
@@ -229,4 +227,12 @@ func ValidateGitRepoProjectExists(val any) error {
 	}
 
 	return nil
+}
+
+func ExtractionRepoName(repo string) string {
+	url := strings.TrimSuffix(repo, ".git")
+
+	repoName := path.Base(url)
+
+	return repoName
 }
