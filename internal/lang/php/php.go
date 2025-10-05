@@ -362,5 +362,33 @@ func cloneProject() {
 
 	utils.ClearTerminal()
 
-	println(gitRepo, containerPort)
+	repoName := utils.ExtractionRepoName(gitRepo)
+
+	homeDir, err := os.UserHomeDir()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	path := filepath.Join(homeDir, "dev", repoName)
+	containerName := repoName
+
+	fmt.Print(`
+ _____ _      ___  _   _ _____   ____  _   _ ____
+/ ____| |    / _ \| \ | | ____| |  _ \| | | |  _ \
+| |   | |   | | | |  \| |  _|   | |_) | |_| | |_) |
+| |___| |___| |_| | |\  | |___  |  __/|  _  |  __/
+\_____|_____|\___/|_| \_|_____| |_|   |_| |_|_|
+
+`)
+
+	fmt.Println("╔══════════════════════════════════════════════════╗")
+	fmt.Println("║              Configuration                       ║")
+	fmt.Println("╠══════════════════════════════════════════════════╣")
+	fmt.Printf("║ Container name : %-31s ║\n", containerName)
+	fmt.Printf("║ Clone path : %-35s ║\n", path)
+	fmt.Printf("║ Port           : %-31d ║\n", containerPort)
+	fmt.Println("║ Framework      : None                            ║")
+	fmt.Println("║ Language       : PHP                             ║")
+	fmt.Println("╚══════════════════════════════════════════════════╝")
 }
