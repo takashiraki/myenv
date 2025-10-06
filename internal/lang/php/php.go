@@ -382,13 +382,13 @@ func cloneProject() {
 
 `)
 
-	fmt.Println("╔══════════════════════════════════════════════════╗")
-	fmt.Println("║              Configuration                       ║")
-	fmt.Println("╠══════════════════════════════════════════════════╣")
-	fmt.Printf("║ Container name : %-31s ║\n", containerName)
-	fmt.Printf("║ Clone path : %-35s ║\n", path)
-	fmt.Printf("║ Port           : %-31d ║\n", containerPort)
-	fmt.Println("║ Framework      : None                            ║")
-	fmt.Println("║ Language       : PHP                             ║")
-	fmt.Println("╚══════════════════════════════════════════════════╝")
+	fmt.Println("╔═════════════════════════════════════════════════════╗")
+	fmt.Println("║                 Configuration                       ║")
+	fmt.Println("╠═════════════════════════════════════════════════════╣")
+	fmt.Printf("║ Container name : %-34s ║\n", containerName)
+	fmt.Printf("║ Clone path     : %-34s ║\n", path)
+	fmt.Printf("║ Port           : %-34d ║\n", containerPort)
+	fmt.Println("║ Framework      : None                               ║")
+	fmt.Println("║ Language       : PHP                                ║")
+	fmt.Println("╚═════════════════════════════════════════════════════╝")
 }
