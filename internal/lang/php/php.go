@@ -391,4 +391,50 @@ func cloneProject() {
 	fmt.Println("║ Framework      : None                               ║")
 	fmt.Println("║ Language       : PHP                                ║")
 	fmt.Println("╚═════════════════════════════════════════════════════╝")
+
+	var confirmResult bool
+
+	confirmPrompt := &survey.Confirm{
+		Message: "Is it okay to start building the environment with this configuration?",
+	}
+
+	if err := survey.AskOne(confirmPrompt, &confirmResult); err != nil {
+		log.Fatal(err)
+	}
+
+	if !confirmResult {
+		fmt.Println("Please try again")
+		cloneProject()
+	}
+
+	fw := "none"
+	lang := "php"
+	options := map[string]string{
+		"type": "clone",
+		"repo": gitRepo,
+	}
+
+	createConfigFile(
+		containerName,
+		containerPort,
+		path,
+		lang,
+		fw,
+		options,
+	)
+
+	targetRepo := "https://github.com/takashiraki/docker_php.git"
+
+	done := make(chan bool)
+
+	go utils.ShowLoadingIndicator("Cloning repository", done)
+
+	if utils.CloneRepo(targetRepo, path); err != nil {
+		done <- true
+		log.Fatalf(`\r\033[Error!!\n%v`, err)
+	}
+
+	done <- true
+
+	fmt.Printf("\r\033[KCloning repository completed ✓\n")
 }
