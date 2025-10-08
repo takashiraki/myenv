@@ -226,6 +226,18 @@ func ValidateGitRepoProjectExists(val any) error {
 		return errors.New("project with the same name already exists")
 	}
 
+	usedProjects, err := getUsedProject()
+
+	if err != nil {
+		return err
+	}
+
+	for _, usedProject := range usedProjects {
+		if repoName == usedProject {
+			return errors.New("project name is already in use")
+		}
+	}
+
 	return nil
 }
 
