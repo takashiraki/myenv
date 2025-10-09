@@ -429,7 +429,7 @@ func cloneProject() {
 
 	go utils.ShowLoadingIndicator("Cloning repository", done)
 
-	if utils.CloneRepo(targetRepo, path); err != nil {
+	if err := utils.CloneRepo(targetRepo, path); err != nil {
 		done <- true
 		log.Fatalf(`\r\033[Error!!\n%v`, err)
 	}
@@ -437,4 +437,17 @@ func cloneProject() {
 	done <- true
 
 	fmt.Printf("\r\033[KCloning repository completed ✓\n")
+
+	done = make(chan bool)
+
+	go utils.ShowLoadingIndicator("Creating .env file", done)
+
+	if err := utils.CreateEnvFile(path); err != nil {
+		done <- true
+		log.Fatalf("\r\033[Kerror creating .env file: %v", err)
+	}
+
+	done <- true
+
+	fmt.Printf("\r\033[KCreating .env file completed ✓\n")
 }
