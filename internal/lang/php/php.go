@@ -450,4 +450,51 @@ func cloneProject() {
 	done <- true
 
 	fmt.Printf("\r\033[KCreating .env file completed ✓\n")
+
+	done = make(chan bool)
+
+	go utils.ShowLoadingIndicator("Clone your PHP project.", done)
+
+	srcTargetPath := filepath.Join(path, "src", containerName)
+
+	if err := utils.CloneRepo(gitRepo, srcTargetPath); err != nil {
+		done <- true
+		log.Fatalf(`\r\033[Error!!\n%v`, err)
+	}
+
+	done <- true
+
+	fmt.Printf("\r\033[KCloning your PHP project completed ✓\n")
+
+	done = make(chan bool)
+
+	go utils.ShowLoadingIndicator("Setup env file", done)
+
+	envFilePath := filepath.Join(path, ".env")
+
+	repositoryPath := fmt.Sprintf("src/%s", containerName)
+	hostPort := 80
+
+	content, err := os.ReadFile(envFilePath)
+
+	if err != nil {
+		done <- true
+		log.Fatalf("\r\033[Kerror reading .env file: %v", err)
+	}
+
+	updateContent := string(content)
+
+	updateContent = strings.ReplaceAll(updateContent, "REPOSITORY_PATH=", fmt.Sprintf("REPOSITORY_PATH=%s", repositoryPath))
+	updateContent = strings.ReplaceAll(updateContent, "CONTAINER_NAME=", fmt.Sprintf("CONTAINER_NAME=%s", containerName))
+	updateContent = strings.ReplaceAll(updateContent, "HOST_PORT=", fmt.Sprintf("HOST_PORT=%d", hostPort))
+	updateContent = strings.ReplaceAll(updateContent, "CONTAINER_PORT=", fmt.Sprintf("CONTAINER_PORT=%d", containerPort))
+
+	if err := os.WriteFile(envFilePath, []byte(updateContent), 0644); err != nil {
+		done <- true
+		log.Fatalf("\r\033[Kerror writing .env file: %v", err)
+	}
+
+	done <- true
+
+	fmt.Printf("\r\033[KSetup .env file completed ✓\n")
 }
