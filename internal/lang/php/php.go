@@ -2,6 +2,7 @@ package php
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"myenv/internal/config"
 	"myenv/internal/utils"
@@ -486,8 +487,8 @@ func cloneProject() {
 
 	updateContent = strings.ReplaceAll(updateContent, "REPOSITORY_PATH=", fmt.Sprintf("REPOSITORY_PATH=%s", repositoryPath))
 	updateContent = strings.ReplaceAll(updateContent, "CONTAINER_NAME=", fmt.Sprintf("CONTAINER_NAME=%s", containerName))
-	updateContent = strings.ReplaceAll(updateContent, "HOST_PORT=", fmt.Sprintf("HOST_PORT=%d", hostPort))
-	updateContent = strings.ReplaceAll(updateContent, "CONTAINER_PORT=", fmt.Sprintf("CONTAINER_PORT=%d", containerPort))
+	updateContent = strings.ReplaceAll(updateContent, "HOST_PORT=", fmt.Sprintf("HOST_PORT=%d", containerPort))
+	updateContent = strings.ReplaceAll(updateContent, "CONTAINER_PORT=", fmt.Sprintf("CONTAINER_PORT=%d", hostPort))
 
 	if err := os.WriteFile(envFilePath, []byte(updateContent), 0644); err != nil {
 		done <- true
@@ -497,4 +498,128 @@ func cloneProject() {
 	done <- true
 
 	fmt.Printf("\r\033[KSetup .env file completed ✓\n")
+
+	done = make(chan bool)
+
+	go utils.ShowLoadingIndicator("Creating container workspace", done)
+
+	devContainerPath := filepath.Join(path, ".devcontainer", "devcontainer.json")
+
+	devContainerExamplePath := filepath.Join(path, ".devcontainer", "devcontainer.json.example")
+
+	if _, err := os.Stat(devContainerExamplePath); os.IsNotExist(err) {
+		done <- true
+		log.Fatalf("\r\033[Kerror: .devcontainer.json.example file does not exist in the repository")
+	}
+
+	if _, err := os.Stat(devContainerPath); err == nil {
+		done <- true
+		log.Fatalf("\r\033[Kerror: .devcontainer.json file already exists")
+	} else {
+		src, err := os.Open(devContainerExamplePath)
+
+		if err != nil {
+			done <- true
+			log.Fatalf("\r\033[Kerror opening .devcontainer.json.example file: %v", err)
+		}
+
+		defer src.Close()
+
+		dest, err := os.Create(devContainerPath)
+
+		if err != nil {
+			done <- true
+			log.Fatalf("\r\033[Kerror creating .devcontainer.json file: %v", err)
+		}
+
+		defer dest.Close()
+
+		if _, err := io.Copy(dest, src); err != nil {
+			done <- true
+			log.Fatalf("\r\033[Kerror copying .devcontainer.json.example to .devcontainer.json: %v", err)
+		}
+
+		devContainerContents, err := os.ReadFile(devContainerPath)
+
+		if err != nil {
+			done <- true
+			log.Fatalf("\r\033[Kerror reading .devcontainer.json file: %v", err)
+		}
+
+		updateDevContainerContents := string(devContainerContents)
+
+		updateDevContainerContents = strings.ReplaceAll(updateDevContainerContents, `"name": "php debug",`, fmt.Sprintf(`"name": "%s",`, containerName))
+
+		if err := os.WriteFile(devContainerPath, []byte(updateDevContainerContents), 0644); err != nil {
+			done <- true
+			log.Fatalf("\r\033[Kerror writing .devcontainer.json file: %v", err)
+		}
+	}
+
+	done <- true
+
+	fmt.Printf("\r\033[KCreating container workspace completed ✓\n")
+
+	done = make(chan bool)
+
+	go utils.ShowLoadingIndicator("Starting Docker containers", done)
+
+	dockerCmd := exec.Command("docker", "compose", "up", "-d", "--build")
+
+	dockerCmd.Dir = path
+
+	if _, err := dockerCmd.CombinedOutput(); err != nil {
+		done <- true
+		log.Fatalf("\r\033[Kerror starting Docker containers: %v", err)
+	}
+
+	done <- true
+	fmt.Printf("\r\033[KStarting Docker containers completed ✓\n")
+
+	utils.ClearTerminal()
+
+	fmt.Print(`
+  ____  ___  __  __ ____  _     _____ _____ _____      /\   /\
+ / ___|/ _ \|  \/  |  _ \| |   | ____|_   _| ____|    (  ._. )
+| |   | | | | |\/| | |_) | |   |  _|   | | |  _|       > ^ <
+| |___| |_| | |  | |  __/| |___| |___  | | | |___     /     \
+ \____|\___/|_|  |_|_|   |_____|_____| |_| |_____|   /_______\
+
+`)
+
+	fmt.Println("╔══════════════════════════════════════════════════════════════════╗")
+	fmt.Println("║                   🎉 SETUP COMPLETE! 🎉                          ║")
+	fmt.Println("╠══════════════════════════════════════════════════════════════════╣")
+	fmt.Printf("║ 📦 Container Name : %-44s ║\n", containerName)
+	fmt.Printf("║ 📂 Repository Path: %-44s ║\n", path)
+	fmt.Printf("║ 🌐 Port          : %-45d ║\n", containerPort)
+	fmt.Println("╠══════════════════════════════════════════════════════════════════╣")
+	fmt.Println("║                          Next Steps:                             ║")
+	fmt.Printf("║  • Open VS Code: code %-42s ║\n", path)
+	fmt.Printf("║  • Access app  : http://localhost:%-30d ║\n", containerPort)
+	fmt.Println("║  • Start coding in the devcontainer! 🚀                          ║")
+	fmt.Println("╚══════════════════════════════════════════════════════════════════╝")
+
+	codeVersionCommand := exec.Command("code", "--version")
+
+	if _, err = codeVersionCommand.CombinedOutput(); err == nil {
+
+		var openInVSCode bool
+
+		openInVSCodePrompt := &survey.Confirm{
+			Message: "Do you want to open the project in VS Code?",
+		}
+
+		if err := survey.AskOne(openInVSCodePrompt, &openInVSCode); err != nil {
+			log.Fatal(err)
+		}
+
+		if openInVSCode {
+			openCommand := exec.Command("code", path)
+
+			if _, err := openCommand.CombinedOutput(); err != nil {
+				log.Fatalf("error opening project in VS Code: %v", err)
+			}
+		}
+	}
 }
