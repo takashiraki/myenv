@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -69,6 +70,21 @@ func CreateEnvFile(projectPath string) error {
 
 	if _, err := io.Copy(dst, src); err != nil {
 		return errors.New("error copying .env.example to .env: " + err.Error())
+	}
+
+	return nil
+}
+
+func ReplaceValue(content *string, replacement map[string]interface{}) error {
+	for key, value := range replacement {
+		switch v := value.(type) {
+		case string:
+			*content = strings.ReplaceAll(*content, key, fmt.Sprintf("%s%s", key, v))
+		case int:
+			*content = strings.ReplaceAll(*content, key, fmt.Sprintf("%s%d", key, v))
+		default:
+			return errors.New("invalid type: value must be a string or integer")
+		}
 	}
 
 	return nil

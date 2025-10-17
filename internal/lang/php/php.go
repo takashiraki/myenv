@@ -485,10 +485,14 @@ func cloneProject() {
 
 	updateContent := string(content)
 
-	updateContent = strings.ReplaceAll(updateContent, "REPOSITORY_PATH=", fmt.Sprintf("REPOSITORY_PATH=%s", repositoryPath))
-	updateContent = strings.ReplaceAll(updateContent, "CONTAINER_NAME=", fmt.Sprintf("CONTAINER_NAME=%s", containerName))
-	updateContent = strings.ReplaceAll(updateContent, "HOST_PORT=", fmt.Sprintf("HOST_PORT=%d", containerPort))
-	updateContent = strings.ReplaceAll(updateContent, "CONTAINER_PORT=", fmt.Sprintf("CONTAINER_PORT=%d", hostPort))
+	replacements := map[string]interface{}{
+		"REPOSITORY_PATH=": repositoryPath,
+		"CONTAINER_NAME=":  containerName,
+		"HOST_PORT=":       containerPort,
+		"CONTAINER_PORT=":  hostPort,
+	}
+
+	utils.ReplaceValue(&updateContent, replacements)
 
 	if err := os.WriteFile(envFilePath, []byte(updateContent), 0644); err != nil {
 		done <- true
