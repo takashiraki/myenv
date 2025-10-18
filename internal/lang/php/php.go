@@ -2,7 +2,6 @@ package php
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"myenv/internal/config"
 	"myenv/internal/utils"
@@ -486,13 +485,13 @@ func cloneProject() {
 	updateContent := string(content)
 
 	replacements := map[string]interface{}{
-		"REPOSITORY_PATH=": repositoryPath,
-		"CONTAINER_NAME=":  containerName,
-		"HOST_PORT=":       containerPort,
-		"CONTAINER_PORT=":  hostPort,
+		"REPOSITORY_PATH=": fmt.Sprintf("REPOSITORY_PATH=%s", repositoryPath),
+		"CONTAINER_NAME=":  fmt.Sprintf("CONTAINER_NAME=%s", containerName),
+		"HOST_PORT=":       fmt.Sprintf("HOST_PORT=%d", containerPort),
+		"CONTAINER_PORT=":  fmt.Sprintf("CONTAINER_PORT=%d", hostPort),
 	}
 
-	utils.ReplaceValue(&updateContent, replacements)
+	utils.ReplaceAllValue(&updateContent, replacements)
 
 	if err := os.WriteFile(envFilePath, []byte(updateContent), 0644); err != nil {
 		done <- true
@@ -516,48 +515,26 @@ func cloneProject() {
 		log.Fatalf("\r\033[Kerror: .devcontainer.json.example file does not exist in the repository")
 	}
 
-	if _, err := os.Stat(devContainerPath); err == nil {
+	utils.CopyFile(devContainerExamplePath, devContainerPath)
+
+	devContainerContents, err := os.ReadFile(devContainerPath)
+
+	if err != nil {
 		done <- true
-		log.Fatalf("\r\033[Kerror: .devcontainer.json file already exists")
-	} else {
-		src, err := os.Open(devContainerExamplePath)
+		log.Fatalf("\r\033[Kerror reading .devcontainer.json file: %v", err)
+	}
 
-		if err != nil {
-			done <- true
-			log.Fatalf("\r\033[Kerror opening .devcontainer.json.example file: %v", err)
-		}
+	updateDevContainerContents := string(devContainerContents)
 
-		defer src.Close()
+	replacements = map[string]interface{}{
+		`"name": "php debug",`: fmt.Sprintf(`"name": "%s",`, containerName),
+	}
 
-		dest, err := os.Create(devContainerPath)
+	utils.ReplaceAllValue(&updateDevContainerContents, replacements)
 
-		if err != nil {
-			done <- true
-			log.Fatalf("\r\033[Kerror creating .devcontainer.json file: %v", err)
-		}
-
-		defer dest.Close()
-
-		if _, err := io.Copy(dest, src); err != nil {
-			done <- true
-			log.Fatalf("\r\033[Kerror copying .devcontainer.json.example to .devcontainer.json: %v", err)
-		}
-
-		devContainerContents, err := os.ReadFile(devContainerPath)
-
-		if err != nil {
-			done <- true
-			log.Fatalf("\r\033[Kerror reading .devcontainer.json file: %v", err)
-		}
-
-		updateDevContainerContents := string(devContainerContents)
-
-		updateDevContainerContents = strings.ReplaceAll(updateDevContainerContents, `"name": "php debug",`, fmt.Sprintf(`"name": "%s",`, containerName))
-
-		if err := os.WriteFile(devContainerPath, []byte(updateDevContainerContents), 0644); err != nil {
-			done <- true
-			log.Fatalf("\r\033[Kerror writing .devcontainer.json file: %v", err)
-		}
+	if err := os.WriteFile(devContainerPath, []byte(updateDevContainerContents), 0644); err != nil {
+		done <- true
+		log.Fatalf("\r\033[Kerror writing .devcontainer.json file: %v", err)
 	}
 
 	done <- true
