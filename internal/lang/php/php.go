@@ -545,11 +545,7 @@ func cloneProject() {
 
 	go utils.ShowLoadingIndicator("Starting Docker containers", done)
 
-	dockerCmd := exec.Command("docker", "compose", "up", "-d", "--build")
-
-	dockerCmd.Dir = path
-
-	if _, err := dockerCmd.CombinedOutput(); err != nil {
+	if err := utils.UpWithBuild(path); err != nil {
 		done <- true
 		log.Fatalf("\r\033[Kerror starting Docker containers: %v", err)
 	}

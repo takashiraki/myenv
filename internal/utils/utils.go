@@ -95,7 +95,7 @@ func CopyFile(srcPath string, dstPath string) error {
 		return fmt.Errorf("source file %s does not exist", srcPath)
 	}
 
-	if _, err := os.Stat(dstPath); os.IsExist(err) {
+	if _, err := os.Stat(dstPath); !os.IsNotExist(err) {
 		return fmt.Errorf("destination file %s already exists", dstPath)
 	}
 
