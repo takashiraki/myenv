@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -69,6 +70,53 @@ func CreateEnvFile(projectPath string) error {
 
 	if _, err := io.Copy(dst, src); err != nil {
 		return errors.New("error copying .env.example to .env: " + err.Error())
+	}
+
+	return nil
+}
+
+func ReplaceAllValue(content *string, replacement map[string]interface{}) error {
+	for key, value := range replacement {
+		switch v := value.(type) {
+		case string:
+			*content = strings.ReplaceAll(*content, key, v)
+		case int:
+			*content = strings.ReplaceAll(*content, key, fmt.Sprintf("%d", v))
+		default:
+			return errors.New("invalid type: value must be a string or integer")
+		}
+	}
+
+	return nil
+}
+
+func CopyFile(srcPath string, dstPath string) error {
+	if _, err := os.Stat(srcPath); os.IsNotExist(err) {
+		return fmt.Errorf("source file %s does not exist", srcPath)
+	}
+
+	if _, err := os.Stat(dstPath); !os.IsNotExist(err) {
+		return fmt.Errorf("destination file %s already exists", dstPath)
+	}
+
+	f, err := os.Open(srcPath)
+
+	if err != nil {
+		return fmt.Errorf("error opening source file: %v", err)
+	}
+
+	defer f.Close()
+
+	dest, err := os.Create(dstPath)
+
+	if err != nil {
+		return fmt.Errorf("error creating destination file: %v", err)
+	}
+
+	defer dest.Close()
+
+	if _, err := io.Copy(dest, f); err != nil {
+		return fmt.Errorf("error copying file: %v", err)
 	}
 
 	return nil
