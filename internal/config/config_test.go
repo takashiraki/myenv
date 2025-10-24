@@ -68,17 +68,28 @@ func TestMain(m *testing.M) {
 func Test_DeleteProjectConfig(t *testing.T) {
 	projectName := "myenv_test_container"
 
-	err := DeleteProjectConfig(projectName)
-	if err != nil {
-		t.Fatalf("Failed to delete project config: %v", err)
-	}
+	beforConfig, err := LoadConfig()
 
-	config, err := LoadConfig()
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
 
-	if _, exists := config.Projects[projectName]; exists {
+	if _, exists := beforConfig.Projects[projectName]; !exists {
+		t.Fatalf("Project %s does not exist in config before deletion", projectName)
+	}
+
+	err = DeleteProjectConfig(projectName)
+
+	if err != nil {
+		t.Fatalf("Failed to delete project config: %v", err)
+	}
+
+	afterConfig, err := LoadConfig()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
+
+	if _, exists := afterConfig.Projects[projectName]; exists {
 		t.Fatalf("Project %s still exists in config after deletion", projectName)
 	}
 }
