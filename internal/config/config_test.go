@@ -65,7 +65,7 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func Test_DeleteConfig(t *testing.T) {
+func Test_DeleteProjectConfig(t *testing.T) {
 	projectName := "myenv_test_container"
 
 	err := DeleteProjectConfig(projectName)
