@@ -342,7 +342,8 @@ func cloneProject() {
 	)
 
 	if err != nil {
-		log.Fatal(err)
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
 	}
 
 	containerPort := 0
@@ -357,7 +358,8 @@ func cloneProject() {
 	)
 
 	if portErr != nil {
-		log.Fatal(portErr)
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", portErr)
+		return
 	}
 
 	utils.ClearTerminal()
@@ -367,7 +369,8 @@ func cloneProject() {
 	homeDir, err := os.UserHomeDir()
 
 	if err != nil {
-		log.Fatal(err)
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
 	}
 
 	path := filepath.Join(homeDir, "dev", repoName)
@@ -399,12 +402,13 @@ func cloneProject() {
 	}
 
 	if err := survey.AskOne(confirmPrompt, &confirmResult); err != nil {
-		log.Fatal(err)
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
 	}
 
 	if !confirmResult {
-		fmt.Println("Please try again")
-		cloneProject()
+		fmt.Println("\n\033[33mSetup cancelled.\033[0m Returning to configuration...")
+		return
 	}
 
 	fw := "none"
@@ -431,12 +435,14 @@ func cloneProject() {
 
 	if err := utils.CloneRepo(targetRepo, path); err != nil {
 		done <- true
-		log.Fatalf(`\r\033[Error!!\n%v`, err)
+		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to clone repository\n")
+		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+		return
 	}
 
 	done <- true
 
-	fmt.Printf("\r\033[KCloning repository completed ✓\n")
+	fmt.Printf("\r\033[KCloning repository completed \033[32m✓\033[0m\n")
 
 	done = make(chan bool)
 
@@ -449,7 +455,7 @@ func cloneProject() {
 
 	done <- true
 
-	fmt.Printf("\r\033[KCreating .env file completed ✓\n")
+	fmt.Printf("\r\033[KCreating .env file completed \033[32m✓\033[0m\n")
 
 	done = make(chan bool)
 
@@ -459,12 +465,14 @@ func cloneProject() {
 
 	if err := utils.CloneRepo(gitRepo, srcTargetPath); err != nil {
 		done <- true
-		log.Fatalf(`\r\033[Error!!\n%v`, err)
+		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to clone PHP project\n")
+		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+		return
 	}
 
 	done <- true
 
-	fmt.Printf("\r\033[KCloning your PHP project completed ✓\n")
+	fmt.Printf("\r\033[KCloning your PHP project completed \033[32m✓\033[0m\n")
 
 	done = make(chan bool)
 
@@ -500,7 +508,7 @@ func cloneProject() {
 
 	done <- true
 
-	fmt.Printf("\r\033[KSetup .env file completed ✓\n")
+	fmt.Printf("\r\033[KSetup .env file completed \033[32m✓\033[0m\n")
 
 	done = make(chan bool)
 
@@ -539,7 +547,7 @@ func cloneProject() {
 
 	done <- true
 
-	fmt.Printf("\r\033[KCreating container workspace completed ✓\n")
+	fmt.Printf("\r\033[KCreating container workspace completed \033[32m✓\033[0m\n")
 
 	done = make(chan bool)
 
@@ -547,11 +555,53 @@ func cloneProject() {
 
 	if err := utils.UpWithBuild(path); err != nil {
 		done <- true
-		log.Fatalf("\r\033[Kerror starting Docker containers: %v", err)
+		fmt.Printf("\r\033[KStarting Docker containers failed \033[31m✗\033[0m\n\n")
+
+		errMsg := err.Error()
+
+		done = make(chan bool)
+
+		go utils.ShowLoadingIndicator("Cleaning up config", done)
+		config.DeleteProjectConfig(containerName)
+		fmt.Printf("\r\033[KRemoved project configuration \033[32m✓\033[0m\n")
+		done <- true
+
+		switch {
+		case strings.Contains(errMsg, "Cannot connect to the Docker daemon"):
+			fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m Docker daemon is not running\n")
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Solution:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Start Docker Desktop, or\n")
+			fmt.Fprintf(os.Stderr, "   • Run: \033[36msudo systemctl start docker\033[0m\n\n")
+
+		case strings.Contains(errMsg, "port is already allocated") || strings.Contains(errMsg, "address already in use"):
+			fmt.Fprintf(os.Stderr, "Error: Port is already in use\n")
+			fmt.Fprintf(os.Stderr, "Solution: Stop the conflicting container or choose a different port\n")
+
+		case strings.Contains(errMsg, "permission denied"):
+			fmt.Fprintf(os.Stderr, "Error: Permission denied\n")
+			fmt.Fprintf(os.Stderr, "Solution: Add your user to the docker group or run with sudo\n")
+
+		case strings.Contains(errMsg, "no space left"):
+			fmt.Fprintf(os.Stderr, "Error: Insufficient disk space\n")
+			fmt.Fprintf(os.Stderr, "Solution: Free up disk space or run 'docker system prune'\n")
+
+		default:
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "\nTroubleshooting:\n")
+			fmt.Fprintf(os.Stderr, "  • Check Docker: docker ps\n")
+			fmt.Fprintf(os.Stderr, "  • View logs: cd %s && docker compose logs\n",
+				path)
+			fmt.Fprintf(os.Stderr, "  • Check .env: cat %s/.env\n", path)
+		}
+
+		// コンフィグ削除
+		// リポジトリ削除
+
+		return
 	}
 
 	done <- true
-	fmt.Printf("\r\033[KStarting Docker containers completed ✓\n")
+	fmt.Printf("\r\033[KStarting Docker containers completed \033[32m✓\033[0m\n")
 
 	utils.ClearTerminal()
 
