@@ -559,12 +559,7 @@ func cloneProject() {
 
 		errMsg := err.Error()
 
-		done = make(chan bool)
-
-		go utils.ShowLoadingIndicator("Cleaning up config", done)
-		config.DeleteProjectConfig(containerName)
-		fmt.Printf("\r\033[KRemoved project configuration \033[32m✓\033[0m\n")
-		done <- true
+		cleanUpFailedSetup(containerName, path)
 
 		switch {
 		case strings.Contains(errMsg, "Cannot connect to the Docker daemon"):
@@ -593,9 +588,6 @@ func cloneProject() {
 				path)
 			fmt.Fprintf(os.Stderr, "  • Check .env: cat %s/.env\n", path)
 		}
-
-		// コンフィグ削除
-		// リポジトリ削除
 
 		return
 	}
@@ -648,5 +640,29 @@ func cloneProject() {
 				log.Fatalf("error opening project in VS Code: %v", err)
 			}
 		}
+	}
+}
+
+func cleanUpFailedSetup(containerName string, path string) {
+	done := make(chan bool)
+
+	go utils.ShowLoadingIndicator("Cleaning up config", done)
+	if err := config.DeleteProjectConfig(containerName); err != nil {
+		done <- true
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m Failed to remove project configuration: %v\n", err)
+	} else {
+		done <- true
+		fmt.Printf("\r\033[KRemoved project configuration \033[32m✓\033[0m\n")
+	}
+
+	done = make(chan bool)
+
+	go utils.ShowLoadingIndicator("Removing cloned repository", done)
+	if err := os.RemoveAll(path); err != nil {
+		done <- true
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m Failed to remove cloned repository: %v\n", err)
+	} else {
+		done <- true
+		fmt.Printf("\r\033[KRemoved cloned repository \033[32m✓\033[0m\n")
 	}
 }
