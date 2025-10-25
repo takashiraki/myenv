@@ -435,8 +435,42 @@ func cloneProject() {
 
 	if err := utils.CloneRepo(targetRepo, path); err != nil {
 		done <- true
-		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to clone repository\n")
-		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to clone PHP project\n")
+
+		// エラーの種類に応じた具体的なガイダンス
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "Repository not found") ||
+			strings.Contains(errMsg, "fatal: repository"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Possible causes:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Repository URL is incorrect\n")
+			fmt.Fprintf(os.Stderr, "   • Repository is private and requires authentication\n")
+			fmt.Fprintf(os.Stderr, "   • Repository does not exist\n")
+			fmt.Fprintf(os.Stderr, "\n\033[36m→ Next steps:\033[0m Check the repository URL and try again\n\n")
+
+		case strings.Contains(errMsg, "Could not resolve host") ||
+			strings.Contains(errMsg, "network"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Network issue:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Check your internet connection\n")
+			fmt.Fprintf(os.Stderr, "   • Verify DNS settings\n")
+			fmt.Fprintf(os.Stderr, "\n\033[36m→ Next steps:\033[0m Check network andtry again\n\n")
+
+		case strings.Contains(errMsg, "git: command not found") ||
+			strings.Contains(errMsg, "executable file not found"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Git is not installed:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Ubuntu/Debian: \033[36msudo apt install git\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • macOS: \033[36mbrew install git\033[0m\n")
+			fmt.Fprintf(os.Stderr, "\n\033[36m→ Next steps:\033[0m Install git and try again\n\n")
+
+		default:
+			fmt.Fprintf(os.Stderr, "\nDetails: %v\n", err)
+			fmt.Fprintf(os.Stderr, "\n\033[36m→ Next steps:\033[0m Fix the issue above and try again\n\n")
+		}
+
+		fmt.Printf("\033[33mℹ Info:\033[0m Cleaning up partial setup...\n")
+		cleanUpFailedSetup(containerName, path)
+
+		fmt.Printf("\n\033[32m✓ Cleanup complete.\033[0m You can safely run this command again.\n\n")
 		return
 	}
 
@@ -450,7 +484,10 @@ func cloneProject() {
 
 	if err := utils.CreateEnvFile(path); err != nil {
 		done <- true
-		log.Fatalf("\r\033[Kerror creating .env file: %v", err)
+		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to create .env file\n")
+		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+		cleanUpFailedSetup(containerName, path)
+		return
 	}
 
 	done <- true
@@ -466,7 +503,50 @@ func cloneProject() {
 	if err := utils.CloneRepo(gitRepo, srcTargetPath); err != nil {
 		done <- true
 		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to clone PHP project\n")
-		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+
+		// エラーの種類に応じた具体的なガイダンス
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "Repository not found") ||
+			strings.Contains(errMsg, "fatal: repository"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Possible causes:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Repository URL is incorrect\n")
+			fmt.Fprintf(os.Stderr, "   • Repository is private and requires authentication\n")
+			fmt.Fprintf(os.Stderr, "   • Repository does not exist\n")
+			fmt.Fprintf(os.Stderr, "\n\033[36m→ Next steps:\033[0m Check the repository URL and try again\n\n")
+
+		case strings.Contains(errMsg, "Authentication failed") ||
+			strings.Contains(errMsg, "Permission denied"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Authentication required:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Set up SSH keys: ssh-keygen && cat ~/.ssh/id_rsa.pub\n")
+			fmt.Fprintf(os.Stderr, "   • Or use HTTPS with personal access token\n")
+			fmt.Fprintf(os.Stderr, "\n\033[36m→ Next steps:\033[0m Configure git credentials and try again\n\n")
+
+		case strings.Contains(errMsg, "Could not resolve host") ||
+			strings.Contains(errMsg, "network"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Network issue:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Check your internet connection\n")
+			fmt.Fprintf(os.Stderr, "   • Verify DNS settings\n")
+			fmt.Fprintf(os.Stderr, "\n\033[36m→ Next steps:\033[0m Check network andtry again\n\n")
+
+		case strings.Contains(errMsg, "git: command not found") ||
+			strings.Contains(errMsg, "executable file not found"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Git is not installed:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Ubuntu/Debian: \033[36msudo apt install git\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • macOS: \033[36mbrew install git\033[0m\n")
+			fmt.Fprintf(os.Stderr, "\n\033[36m→ Next steps:\033[0m Install git and try again\n\n")
+
+		default:
+			fmt.Fprintf(os.Stderr, "\nDetails: %v\n", err)
+			fmt.Fprintf(os.Stderr, "\n\033[36m→ Next steps:\033[0m Fix the issue above and try again\n\n")
+		}
+
+		// クリーンアップの実行を明示
+		fmt.Printf("\033[33mℹ Info:\033[0m Cleaning up partial setup...\n")
+		cleanUpFailedSetup(containerName, path)
+
+		// 再試行方法を明示
+		fmt.Printf("\n\033[32m✓ Cleanup complete.\033[0m You can safely run this command again.\n\n")
 		return
 	}
 
@@ -487,7 +567,9 @@ func cloneProject() {
 
 	if err != nil {
 		done <- true
-		log.Fatalf("\r\033[Kerror reading .env file: %v", err)
+		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to read .env file\n")
+		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+		return
 	}
 
 	updateContent := string(content)
@@ -499,11 +581,18 @@ func cloneProject() {
 		"CONTAINER_PORT=":  fmt.Sprintf("CONTAINER_PORT=%d", hostPort),
 	}
 
-	utils.ReplaceAllValue(&updateContent, replacements)
+	if err := utils.ReplaceAllValue(&updateContent, replacements); err != nil {
+		done <- true
+		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to update .env file\n")
+		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+		return
+	}
 
 	if err := os.WriteFile(envFilePath, []byte(updateContent), 0644); err != nil {
 		done <- true
-		log.Fatalf("\r\033[Kerror writing .env file: %v", err)
+		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to write .env file\n")
+		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+		return
 	}
 
 	done <- true
@@ -520,7 +609,10 @@ func cloneProject() {
 
 	if _, err := os.Stat(devContainerExamplePath); os.IsNotExist(err) {
 		done <- true
-		log.Fatalf("\r\033[Kerror: .devcontainer.json.example file does not exist in the repository")
+		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m .devcontainer.json.example file does not exist\n")
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m .devcontainer.json.example file does not exist\n\n")
+		cleanUpFailedSetup(containerName, path)
+		return
 	}
 
 	utils.CopyFile(devContainerExamplePath, devContainerPath)
@@ -529,7 +621,10 @@ func cloneProject() {
 
 	if err != nil {
 		done <- true
-		log.Fatalf("\r\033[Kerror reading .devcontainer.json file: %v", err)
+		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to read .devcontainer.json file\n")
+		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+		cleanUpFailedSetup(containerName, path)
+		return
 	}
 
 	updateDevContainerContents := string(devContainerContents)
@@ -538,11 +633,20 @@ func cloneProject() {
 		`"name": "php debug",`: fmt.Sprintf(`"name": "%s",`, containerName),
 	}
 
-	utils.ReplaceAllValue(&updateDevContainerContents, replacements)
+	if err := utils.ReplaceAllValue(&updateDevContainerContents, replacements); err != nil {
+		done <- true
+		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to update devcontainer.json file\n")
+		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+		cleanUpFailedSetup(containerName, path)
+		return
+	}
 
 	if err := os.WriteFile(devContainerPath, []byte(updateDevContainerContents), 0644); err != nil {
 		done <- true
-		log.Fatalf("\r\033[Kerror writing .devcontainer.json file: %v", err)
+		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to write devcontainer.json file\n")
+		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+		cleanUpFailedSetup(containerName, path)
+		return
 	}
 
 	done <- true
