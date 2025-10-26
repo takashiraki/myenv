@@ -437,7 +437,6 @@ func cloneProject() {
 		done <- true
 		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to clone PHP project\n")
 
-		// エラーの種類に応じた具体的なガイダンス
 		errMsg := err.Error()
 		switch {
 		case strings.Contains(errMsg, "Repository not found") ||
@@ -485,8 +484,44 @@ func cloneProject() {
 	if err := utils.CreateEnvFile(path); err != nil {
 		done <- true
 		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to create .env file\n")
-		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "permission denied"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Permission issue:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Check directory permissions: \033[36mls -la %s\033[0m\n", path)
+			fmt.Fprintf(os.Stderr, "   • Fix ownership: \033[36msudo chown -R $USER %s\033[0m\n", path)
+			fmt.Fprintf(os.Stderr, "\n\033[36m→ Next steps:\033[0m Fix permissions and try again\n\n")
+
+		case strings.Contains(errMsg, ".env.example") && strings.Contains(errMsg, "no such file"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Template file missing:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   The cloned repository is missing .env.example\n")
+			fmt.Fprintf(os.Stderr, "   This file is required as a template for .env creation\n\n")
+			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Check if the repository includes .env.example\n")
+			fmt.Fprintf(os.Stderr, "   • Or manually create .env file in: %s\n\n", path)
+
+		case strings.Contains(errMsg, "already exists"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 File already exists:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   .env file already exists from a previous run\n")
+			fmt.Fprintf(os.Stderr, "   • View existing file: \033[36mcat %s/.env\033[0m\n", path)
+			fmt.Fprintf(os.Stderr, "   • Or remove it: \033[36mrm %s/.env\033[0m\n\n", path)
+			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m Remove or backup the existing .env and try again\n\n")
+
+		case strings.Contains(errMsg, "no space left"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Disk space issue:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Check disk space: \033[36mdf -h\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Clean Docker: \033[36mdocker system prune -a\033[0m\n")
+			fmt.Fprintf(os.Stderr, "\n\033[36m→ Next steps:\033[0m Free up space and try again\n\n")
+
+		default:
+			fmt.Fprintf(os.Stderr, "\nDetails: %v\n", err)
+			fmt.Fprintf(os.Stderr, "\n\033[36m→ Next steps:\033[0m Check the error above and try again\n\n")
+		}
+
+		fmt.Printf("\033[33mℹ Info:\033[0m Cleaning up partial setup...\n")
 		cleanUpFailedSetup(containerName, path)
+		fmt.Printf("\n\033[32m✓ Cleanup complete.\033[0m You can safely run this command again.\n\n")
 		return
 	}
 
@@ -504,7 +539,6 @@ func cloneProject() {
 		done <- true
 		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to clone PHP project\n")
 
-		// エラーの種類に応じた具体的なガイダンス
 		errMsg := err.Error()
 		switch {
 		case strings.Contains(errMsg, "Repository not found") ||
@@ -541,11 +575,9 @@ func cloneProject() {
 			fmt.Fprintf(os.Stderr, "\n\033[36m→ Next steps:\033[0m Fix the issue above and try again\n\n")
 		}
 
-		// クリーンアップの実行を明示
 		fmt.Printf("\033[33mℹ Info:\033[0m Cleaning up partial setup...\n")
 		cleanUpFailedSetup(containerName, path)
 
-		// 再試行方法を明示
 		fmt.Printf("\n\033[32m✓ Cleanup complete.\033[0m You can safely run this command again.\n\n")
 		return
 	}
