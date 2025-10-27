@@ -600,7 +600,45 @@ func cloneProject() {
 	if err != nil {
 		done <- true
 		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to read .env file\n")
-		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "no such file"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 File not found:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   The .env file doesn't exist\n")
+			fmt.Fprintf(os.Stderr, "   Expected location: \033[36m%s\033[0m\n\n", envFilePath)
+			fmt.Fprintf(os.Stderr, "\033[33m🤔 Why:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Previous step may have failed silently\n")
+			fmt.Fprintf(os.Stderr, "   • File may have been manually deleted\n\n")
+			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m This shouldn't happen normally.\n")
+			fmt.Fprintf(os.Stderr, "   Try running the setup again from the beginning\n\n")
+
+		case strings.Contains(errMsg, "permission denied"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Permission issue:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   You don't have permission to read this file\n\n")
+			fmt.Fprintf(os.Stderr, "\033[33m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Check file permissions:\n")
+			fmt.Fprintf(os.Stderr, "   \033[36mls -la %s\033[0m\n\n", envFilePath)
+			fmt.Fprintf(os.Stderr, "   Fix permissions:\n")
+			fmt.Fprintf(os.Stderr, "   \033[36msudo chmod 644 %s\033[0m\n\n", envFilePath)
+			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m Fix permissions and try again\n\n")
+
+		case strings.Contains(errMsg, "is a directory"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Unexpected directory:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   There's a directory named '.env' instead of a file\n\n")
+			fmt.Fprintf(os.Stderr, "\033[33m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Remove the directory:\n")
+			fmt.Fprintf(os.Stderr, "   \033[36mrm -rf %s\033[0m\n\n", envFilePath)
+			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m Remove the directory and try again\n\n")
+
+		default:
+			fmt.Fprintf(os.Stderr, "\nDetails: %v\n\n", err)
+			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m Fix the issue above and try again\n\n")
+		}
+
+		fmt.Printf("\033[33mℹ Info:\033[0m Cleaning up partial setup...\n")
+		cleanUpFailedSetup(containerName, path)
+		fmt.Printf("\n\033[32m✓ Cleanup complete.\033[0m You can safely run this command again.\n\n")
 		return
 	}
 
@@ -616,14 +654,96 @@ func cloneProject() {
 	if err := utils.ReplaceAllValue(&updateContent, replacements); err != nil {
 		done <- true
 		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to update .env file\n")
-		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "not found") || strings.Contains(errMsg, "missing"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Template mismatch:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   The .env file doesn't have the expected format\n\n")
+			fmt.Fprintf(os.Stderr, "\033[33m🤔 Why:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   The template might be missing placeholders like:\n")
+			fmt.Fprintf(os.Stderr, "   • REPOSITORY_PATH=\n")
+			fmt.Fprintf(os.Stderr, "   • CONTAINER_NAME=\n")
+			fmt.Fprintf(os.Stderr, "   • HOST_PORT=\n")
+			fmt.Fprintf(os.Stderr, "   • CONTAINER_PORT=\n\n")
+			fmt.Fprintf(os.Stderr, "\033[33m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Check the .env file:\n")
+			fmt.Fprintf(os.Stderr, "   \033[36mcat %s\033[0m\n\n", envFilePath)
+			fmt.Fprintf(os.Stderr, "   Option 1: Update your repository's .env.example\n")
+			fmt.Fprintf(os.Stderr, "   Option 2: Manually edit the .env file with correct values\n\n")
+			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m Fix the template format and try again\n\n")
+
+		case strings.Contains(errMsg, "invalid") || strings.Contains(errMsg, "empty"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Invalid configuration:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   One of the configuration values is invalid\n\n")
+			fmt.Fprintf(os.Stderr, "   Container name: %s\n", containerName)
+			fmt.Fprintf(os.Stderr, "   Container port: %d\n\n", containerPort)
+			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m This shouldn't happen normally.\n")
+			fmt.Fprintf(os.Stderr, "   Please report this as a bug\n\n")
+
+		default:
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Unexpected error:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Details: %v\n\n", err)
+			fmt.Fprintf(os.Stderr, "\033[33m🔧 Quick fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   You can manually edit the .env file:\n")
+			fmt.Fprintf(os.Stderr, "   \033[36m%s\033[0m\n\n", envFilePath)
+			fmt.Fprintf(os.Stderr, "   Set these values:\n")
+			fmt.Fprintf(os.Stderr, "   • REPOSITORY_PATH=src/%s\n", containerName)
+			fmt.Fprintf(os.Stderr, "   • CONTAINER_NAME=%s\n", containerName)
+			fmt.Fprintf(os.Stderr, "   • HOST_PORT=%d\n", containerPort)
+			fmt.Fprintf(os.Stderr, "   • CONTAINER_PORT=80\n\n")
+			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m After manual edit, continue with docker compose up\n\n")
+		}
+
+		fmt.Printf("\033[33mℹ Info:\033[0m Cleaning up partial setup...\n")
+		cleanUpFailedSetup(containerName, path)
+		fmt.Printf("\n\033[32m✓ Cleanup complete.\033[0m You can safely run this command again.\n\n")
 		return
 	}
 
 	if err := os.WriteFile(envFilePath, []byte(updateContent), 0644); err != nil {
 		done <- true
 		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to write .env file\n")
-		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "permission denied"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Permission issue:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   You don't have permission to write this file\n\n")
+			fmt.Fprintf(os.Stderr, "\033[33m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Check file permissions:\n")
+			fmt.Fprintf(os.Stderr, "   \033[36mls -la %s\033[0m\n\n", envFilePath)
+			fmt.Fprintf(os.Stderr, "   Fix permissions:\n")
+			fmt.Fprintf(os.Stderr, "   \033[36msudo chmod 644 %s\033[0m\n\n", envFilePath)
+			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m Fix permissions and try again\n\n")
+
+		case strings.Contains(errMsg, "no space left"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Disk space issue:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Your disk is full - no space left to write files\n\n")
+			fmt.Fprintf(os.Stderr, "\033[33m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Check disk space:\n")
+			fmt.Fprintf(os.Stderr, "   \033[36mdf -h\033[0m\n\n")
+			fmt.Fprintf(os.Stderr, "   Clean up Docker:\n")
+			fmt.Fprintf(os.Stderr, "   \033[36mdocker system prune -a\033[0m\n\n")
+			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m Free up space and try again\n\n")
+
+		case strings.Contains(errMsg, "read-only file system"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Read-only filesystem:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   The filesystem is mounted as read-only\n\n")
+			fmt.Fprintf(os.Stderr, "\033[33m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   This usually happens when the disk has errors\n")
+			fmt.Fprintf(os.Stderr, "   Check system logs:\n")
+			fmt.Fprintf(os.Stderr, "   \033[36mdmesg | grep -i error\033[0m\n\n")
+			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m System administrator help may be needed\n\n")
+
+		default:
+			fmt.Fprintf(os.Stderr, "\nDetails: %v\n\n", err)
+			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m Fix the issue above and try again\n\n")
+		}
+
+		fmt.Printf("\033[33mℹ Info:\033[0m Cleaning up partial setup...\n")
+		cleanUpFailedSetup(containerName, path)
+		fmt.Printf("\n\033[32m✓ Cleanup complete.\033[0m You can safely run this command again.\n\n")
 		return
 	}
 
@@ -639,23 +759,216 @@ func cloneProject() {
 
 	devContainerExamplePath := filepath.Join(path, ".devcontainer", "devcontainer.json.example")
 
-	if _, err := os.Stat(devContainerExamplePath); os.IsNotExist(err) {
+	if _, err := os.Stat(devContainerExamplePath); err != nil {
 		done <- true
-		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m .devcontainer.json.example file does not exist\n")
-		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m .devcontainer.json.example file does not exist\n\n")
+
+		if os.IsNotExist(err) {
+			fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Template file not found\n")
+
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 What happened:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   The required file is missing:\n")
+			fmt.Fprintf(os.Stderr, "   \033[36m%s\033[0m\n\n", devContainerExamplePath)
+
+			fmt.Fprintf(os.Stderr, "\033[33m🔍 Why:\033[0m\n")
+
+			// Check if .devcontainer directory exists
+			devContainerDir := filepath.Join(path, ".devcontainer")
+			if _, dirErr := os.Stat(devContainerDir); os.IsNotExist(dirErr) {
+				fmt.Fprintf(os.Stderr, "   • The .devcontainer directory doesn't exist in this repository\n")
+				fmt.Fprintf(os.Stderr, "   • This repository may not support devcontainer development\n\n")
+
+				fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+				fmt.Fprintf(os.Stderr, "   Option 1: Check if you're using the correct repository\n")
+				fmt.Fprintf(os.Stderr, "             Expected: https://github.com/takashiraki/docker_php.git\n\n")
+				fmt.Fprintf(os.Stderr, "   Option 2: Manually create the .devcontainer directory:\n")
+				fmt.Fprintf(os.Stderr, "             $ \033[36mmkdir -p %s\033[0m\n\n", devContainerDir)
+			} else {
+				fmt.Fprintf(os.Stderr, "   • The .devcontainer.json.example file is missing\n")
+				fmt.Fprintf(os.Stderr, "   • The repository structure may be incomplete\n\n")
+
+				fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+				fmt.Fprintf(os.Stderr, "   Check what files exist:\n")
+				fmt.Fprintf(os.Stderr, "   $ \033[36mls -la %s\033[0m\n\n", devContainerDir)
+				fmt.Fprintf(os.Stderr, "   Contact the repository maintainer about the missing file\n\n")
+			}
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Fix the issue above and run this command again\n\n")
+
+		} else if strings.Contains(err.Error(), "permission denied") {
+			fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Permission denied\n")
+
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 What happened:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   You don't have permission to access this directory\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Check directory permissions:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mls -la %s\033[0m\n\n", filepath.Dir(devContainerExamplePath))
+			fmt.Fprintf(os.Stderr, "   Fix ownership:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36msudo chown -R $USER %s\033[0m\n\n", path)
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Fix permissions and run this command again\n\n")
+
+		} else {
+			fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Cannot access file\n")
+
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 What happened:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   An unexpected error occurred while checking for:\n")
+			fmt.Fprintf(os.Stderr, "   \033[36m%s\033[0m\n\n", devContainerExamplePath)
+
+			fmt.Fprintf(os.Stderr, "\033[33m📋 Error details:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   %v\n\n", err)
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Try to fix the error above and run this command again\n\n")
+		}
+
+		fmt.Printf("\033[33mℹ Info:\033[0m Cleaning up partial setup...\n")
 		cleanUpFailedSetup(containerName, path)
+		fmt.Printf("\n\033[32m✓ Cleanup complete.\033[0m You can safely run this command again.\n\n")
 		return
 	}
 
-	utils.CopyFile(devContainerExamplePath, devContainerPath)
+	if err := utils.CopyFile(devContainerExamplePath, devContainerPath); err != nil {
+		done <- true
+		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to copy devcontainer.json file\n")
+
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "permission denied"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Permission issue:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   You don't have permission to copy files\n\n")
+			fmt.Fprintf(os.Stderr, "\033[33m🔍 Why:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Can't read: %s\n", devContainerExamplePath)
+			fmt.Fprintf(os.Stderr, "   • Or can't write to: %s\n\n", filepath.Dir(devContainerPath))
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Check permissions:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mls -la %s\033[0m\n\n", filepath.Dir(devContainerPath))
+			fmt.Fprintf(os.Stderr, "   Fix ownership:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36msudo chown -R $USER %s\033[0m\n\n", path)
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Fix permissions and try again\n\n")
+
+		case strings.Contains(errMsg, "no space left"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Disk space issue:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Your disk is full - no space left to create files\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Check disk space:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mdf -h\033[0m\n\n")
+			fmt.Fprintf(os.Stderr, "   Clean up Docker:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mdocker system prune -a\033[0m\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Free up space and try again\n\n")
+
+		case strings.Contains(errMsg, "already exists"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 File already exists:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   The devcontainer.json file already exists\n")
+			fmt.Fprintf(os.Stderr, "   Location: \033[36m%s\033[0m\n\n", devContainerPath)
+
+			fmt.Fprintf(os.Stderr, "\033[33m🔍 Why:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Previous run may have partially completed\n")
+			fmt.Fprintf(os.Stderr, "   • File was manually created\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Check the existing file:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mcat %s\033[0m\n\n", devContainerPath)
+			fmt.Fprintf(os.Stderr, "   Remove it if needed:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mrm %s\033[0m\n\n", devContainerPath)
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Remove the file and try again\n\n")
+
+		case strings.Contains(errMsg, "read-only file system"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Read-only filesystem:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   The filesystem is mounted as read-only\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   This usually happens when the disk has errors\n")
+			fmt.Fprintf(os.Stderr, "   Check system logs:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mdmesg | grep -i error\033[0m\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m System administrator help may be needed\n\n")
+
+		case strings.Contains(errMsg, "no such file"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Source file disappeared:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   The template file existed but is now missing:\n")
+			fmt.Fprintf(os.Stderr, "   \033[36m%s\033[0m\n\n", devContainerExamplePath)
+
+			fmt.Fprintf(os.Stderr, "\033[33m🔍 Why:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • File was deleted between checks\n")
+			fmt.Fprintf(os.Stderr, "   • Filesystem issue\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m This shouldn't happen normally. Try running again\n\n")
+
+		default:
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Unexpected error:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Failed to copy file:\n")
+			fmt.Fprintf(os.Stderr, "   From: \033[36m%s\033[0m\n", devContainerExamplePath)
+			fmt.Fprintf(os.Stderr, "   To:   \033[36m%s\033[0m\n\n", devContainerPath)
+
+			fmt.Fprintf(os.Stderr, "\033[33m📋 Error details:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   %v\n\n", err)
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Try to fix the error above and run again\n\n")
+		}
+
+		fmt.Printf("\033[33mℹ Info:\033[0m Cleaning up partial setup...\n")
+		cleanUpFailedSetup(containerName, path)
+		fmt.Printf("\n\033[32m✓ Cleanup complete.\033[0m You can safely run this command again.\n\n")
+		return
+	}
 
 	devContainerContents, err := os.ReadFile(devContainerPath)
 
 	if err != nil {
 		done <- true
-		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to read .devcontainer.json file\n")
-		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to read devcontainer.json file\n")
+
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "no such file"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 File disappeared:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   The file was just created but is now missing:\n")
+			fmt.Fprintf(os.Stderr, "   \033[36m%s\033[0m\n\n", devContainerPath)
+
+			fmt.Fprintf(os.Stderr, "\033[33m🔍 Why:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Copy operation may have failed silently\n")
+			fmt.Fprintf(os.Stderr, "   • File was deleted immediately after creation\n")
+			fmt.Fprintf(os.Stderr, "   • Filesystem issue\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m This shouldn't happen normally. Try running again\n\n")
+
+		case strings.Contains(errMsg, "permission denied"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Permission issue:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   You don't have permission to read this file\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Check file permissions:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mls -la %s\033[0m\n\n", devContainerPath)
+			fmt.Fprintf(os.Stderr, "   Fix permissions:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36msudo chmod 644 %s\033[0m\n\n", devContainerPath)
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Fix permissions and try again\n\n")
+
+		case strings.Contains(errMsg, "is a directory"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Unexpected directory:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   There's a directory named 'devcontainer.json' instead of a file\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Remove the directory:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mrm -rf %s\033[0m\n\n", devContainerPath)
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Remove the directory and try again\n\n")
+
+		default:
+			fmt.Fprintf(os.Stderr, "\n\033[33m📋 Error details:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   %v\n\n", err)
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Fix the issue above and try again\n\n")
+		}
+
+		fmt.Printf("\033[33mℹ Info:\033[0m Cleaning up partial setup...\n")
 		cleanUpFailedSetup(containerName, path)
+		fmt.Printf("\n\033[32m✓ Cleanup complete.\033[0m You can safely run this command again.\n\n")
 		return
 	}
 
@@ -668,16 +981,116 @@ func cloneProject() {
 	if err := utils.ReplaceAllValue(&updateDevContainerContents, replacements); err != nil {
 		done <- true
 		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to update devcontainer.json file\n")
-		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "not found") || strings.Contains(errMsg, "missing"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Template mismatch:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   The devcontainer.json doesn't have the expected format\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[33m🔍 Why:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Looking for: \033[36m\"name\": \"php debug\",\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   But it doesn't exist in the file\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Check the file contents:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mcat %s\033[0m\n\n", devContainerPath)
+			fmt.Fprintf(os.Stderr, "   Option 1: Update the repository's devcontainer.json.example\n")
+			fmt.Fprintf(os.Stderr, "   Option 2: Manually edit the devcontainer.json:\n")
+			fmt.Fprintf(os.Stderr, "             Change the \"name\" field to: \033[36m\"%s\"\033[0m\n\n", containerName)
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Fix the template format and try again\n\n")
+
+		case strings.Contains(errMsg, "invalid") || strings.Contains(errMsg, "empty"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Invalid configuration:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   The container name is invalid or empty\n")
+			fmt.Fprintf(os.Stderr, "   Container name: \033[36m%s\033[0m\n\n", containerName)
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m This shouldn't happen. Please report this as a bug\n\n")
+
+		default:
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Unexpected error:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Failed to update the devcontainer.json file\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[33m📋 Error details:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   %v\n\n", err)
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 Quick fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   You can manually edit the file:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36m%s\033[0m\n\n", devContainerPath)
+			fmt.Fprintf(os.Stderr, "   Change \"name\" to: \033[36m\"%s\"\033[0m\n\n", containerName)
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m After manual edit, continue setup\n\n")
+		}
+
+		fmt.Printf("\033[33mℹ Info:\033[0m Cleaning up partial setup...\n")
 		cleanUpFailedSetup(containerName, path)
+		fmt.Printf("\n\033[32m✓ Cleanup complete.\033[0m You can safely run this command again.\n\n")
 		return
 	}
 
 	if err := os.WriteFile(devContainerPath, []byte(updateDevContainerContents), 0644); err != nil {
 		done <- true
 		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to write devcontainer.json file\n")
-		fmt.Fprintf(os.Stderr, "Details: %v\n\n", err)
+
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "permission denied"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Permission issue:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   You don't have permission to write this file\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Check file permissions:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mls -la %s\033[0m\n\n", devContainerPath)
+			fmt.Fprintf(os.Stderr, "   Fix permissions:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36msudo chmod 644 %s\033[0m\n\n", devContainerPath)
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Fix permissions and try again\n\n")
+
+		case strings.Contains(errMsg, "no space left"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Disk space issue:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Your disk is full - no space left to write files\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Check disk space:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mdf -h\033[0m\n\n")
+			fmt.Fprintf(os.Stderr, "   Clean up Docker:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mdocker system prune -a\033[0m\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Free up space and try again\n\n")
+
+		case strings.Contains(errMsg, "read-only file system"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Read-only filesystem:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   The filesystem is mounted as read-only\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   This usually happens when the disk has errors\n")
+			fmt.Fprintf(os.Stderr, "   Check system logs:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mdmesg | grep -i error\033[0m\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m System administrator help may be needed\n\n")
+
+		case strings.Contains(errMsg, "is a directory"):
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Path is a directory:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   The path exists but it's a directory, not a file:\n")
+			fmt.Fprintf(os.Stderr, "   \033[36m%s\033[0m\n\n", devContainerPath)
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Remove the directory:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mrm -rf %s\033[0m\n\n", devContainerPath)
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Remove the directory and try again\n\n")
+
+		default:
+			fmt.Fprintf(os.Stderr, "\n\033[33m📋 Error details:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   %v\n\n", err)
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Fix the issue above and try again\n\n")
+		}
+
+		fmt.Printf("\033[33mℹ Info:\033[0m Cleaning up partial setup...\n")
 		cleanUpFailedSetup(containerName, path)
+		fmt.Printf("\n\033[32m✓ Cleanup complete.\033[0m You can safely run this command again.\n\n")
 		return
 	}
 
@@ -691,40 +1104,82 @@ func cloneProject() {
 
 	if err := utils.UpWithBuild(path); err != nil {
 		done <- true
-		fmt.Printf("\r\033[KStarting Docker containers failed \033[31m✗\033[0m\n\n")
+		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to start Docker containers\n")
 
 		errMsg := err.Error()
 
-		cleanUpFailedSetup(containerName, path)
-
 		switch {
 		case strings.Contains(errMsg, "Cannot connect to the Docker daemon"):
-			fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m Docker daemon is not running\n")
-			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Solution:\033[0m\n")
-			fmt.Fprintf(os.Stderr, "   • Start Docker Desktop, or\n")
-			fmt.Fprintf(os.Stderr, "   • Run: \033[36msudo systemctl start docker\033[0m\n\n")
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 What happened:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Docker daemon is not running\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[33m🔍 Why:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   • Docker Desktop is not started\n")
+			fmt.Fprintf(os.Stderr, "   • Docker service is stopped\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Option 1: Start Docker Desktop\n\n")
+			fmt.Fprintf(os.Stderr, "   Option 2: Start Docker service:\n")
+			fmt.Fprintf(os.Stderr, "             $ \033[36msudo systemctl start docker\033[0m\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Start Docker and try again\n\n")
 
 		case strings.Contains(errMsg, "port is already allocated") || strings.Contains(errMsg, "address already in use"):
-			fmt.Fprintf(os.Stderr, "Error: Port is already in use\n")
-			fmt.Fprintf(os.Stderr, "Solution: Stop the conflicting container or choose a different port\n")
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 What happened:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Port %d is already in use by another application\n\n", containerPort)
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Option 1: Find and stop the conflicting process:\n")
+			fmt.Fprintf(os.Stderr, "             $ \033[36msudo lsof -i :%d\033[0m\n\n", containerPort)
+			fmt.Fprintf(os.Stderr, "   Option 2: Use a different port when running this setup\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Free up the port and try again\n\n")
 
 		case strings.Contains(errMsg, "permission denied"):
-			fmt.Fprintf(os.Stderr, "Error: Permission denied\n")
-			fmt.Fprintf(os.Stderr, "Solution: Add your user to the docker group or run with sudo\n")
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 What happened:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   You don't have permission to run Docker commands\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Add your user to the docker group:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36msudo usermod -aG docker $USER\033[0m\n\n")
+			fmt.Fprintf(os.Stderr, "   Then log out and log back in, or run:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mnewgrp docker\033[0m\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Fix permissions and try again\n\n")
 
 		case strings.Contains(errMsg, "no space left"):
-			fmt.Fprintf(os.Stderr, "Error: Insufficient disk space\n")
-			fmt.Fprintf(os.Stderr, "Solution: Free up disk space or run 'docker system prune'\n")
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 What happened:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Your disk is full - no space left for Docker\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Check disk space:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mdf -h\033[0m\n\n")
+			fmt.Fprintf(os.Stderr, "   Clean up Docker resources:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mdocker system prune -a\033[0m\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Free up space and try again\n\n")
 
 		default:
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			fmt.Fprintf(os.Stderr, "\nTroubleshooting:\n")
-			fmt.Fprintf(os.Stderr, "  • Check Docker: docker ps\n")
-			fmt.Fprintf(os.Stderr, "  • View logs: cd %s && docker compose logs\n",
-				path)
-			fmt.Fprintf(os.Stderr, "  • Check .env: cat %s/.env\n", path)
+			fmt.Fprintf(os.Stderr, "\n\033[33m💡 What happened:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Docker containers failed to start\n\n")
+
+			fmt.Fprintf(os.Stderr, "\033[33m📋 Error details:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   %v\n\n", err)
+
+			fmt.Fprintf(os.Stderr, "\033[36m🔧 Troubleshooting:\033[0m\n")
+			fmt.Fprintf(os.Stderr, "   Check Docker status:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mdocker ps\033[0m\n\n")
+			fmt.Fprintf(os.Stderr, "   View container logs:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mcd %s && docker compose logs\033[0m\n\n", path)
+			fmt.Fprintf(os.Stderr, "   Check .env file:\n")
+			fmt.Fprintf(os.Stderr, "   $ \033[36mcat %s/.env\033[0m\n\n", path)
+
+			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Check the error details above and try again\n\n")
 		}
 
+		fmt.Printf("\033[33mℹ Info:\033[0m Cleaning up partial setup...\n")
+		cleanUpFailedSetup(containerName, path)
+		fmt.Printf("\n\033[32m✓ Cleanup complete.\033[0m You can safely run this command again.\n\n")
 		return
 	}
 
