@@ -75,7 +75,7 @@ to quickly create a Cobra application.`,
 			} else {
 				fwPrompt := &survey.Select{
 					Message: "Select the framework you want to use: ",
-					Options: []string{"Laravel", "None"},
+					Options: []string{"None"},
 				}
 
 				if err := survey.AskOne(fwPrompt, &fw); err != nil {

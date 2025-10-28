@@ -162,3 +162,19 @@ func AddProjectConfig(containerName string, containerPort int, path string, lang
 
 	return nil
 }
+
+func DeleteProjectConfig(projectName string) error {
+	config, err := LoadConfig()
+
+	if err != nil {
+		return err
+	}
+
+	delete(config.Projects, projectName)
+
+	if err := SaveConfig(config); err != nil {
+		return err
+	}
+
+	return nil
+}
