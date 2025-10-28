@@ -376,24 +376,13 @@ func cloneProject() {
 	path := filepath.Join(homeDir, "dev", repoName)
 	containerName := repoName
 
-	fmt.Print(`
- _____ _      ___  _   _ _____   ____  _   _ ____
-/ ____| |    / _ \| \ | | ____| |  _ \| | | |  _ \
-| |   | |   | | | |  \| |  _|   | |_) | |_| | |_) |
-| |___| |___| |_| | |\  | |___  |  __/|  _  |  __/
-\_____|_____|\___/|_| \_|_____| |_|   |_| |_|_|
-
-`)
-
-	fmt.Println("╔═════════════════════════════════════════════════════╗")
-	fmt.Println("║                 Configuration                       ║")
-	fmt.Println("╠═════════════════════════════════════════════════════╣")
-	fmt.Printf("║ Container name : %-34s ║\n", containerName)
-	fmt.Printf("║ Clone path     : %-34s ║\n", path)
-	fmt.Printf("║ Port           : %-34d ║\n", containerPort)
-	fmt.Println("║ Framework      : None                               ║")
-	fmt.Println("║ Language       : PHP                                ║")
-	fmt.Println("╚═════════════════════════════════════════════════════╝")
+	fmt.Printf("\n")
+	fmt.Printf("\033[33m📋 Configuration:\033[0m\n")
+	fmt.Printf("   • Container name : %s\n", containerName)
+	fmt.Printf("   • Clone path     : %s\n", path)
+	fmt.Printf("   • Port           : %d\n", containerPort)
+	fmt.Printf("   • Framework      : None\n")
+	fmt.Printf("   • Language       : PHP\n\n")
 
 	var confirmResult bool
 
@@ -1186,29 +1175,20 @@ func cloneProject() {
 	done <- true
 	fmt.Printf("\r\033[KStarting Docker containers completed \033[32m✓\033[0m\n")
 
-	utils.ClearTerminal()
+	fmt.Printf("\n")
+	fmt.Printf("\033[32m✓ Setup Complete!\033[0m 🎉\n\n")
 
-	fmt.Print(`
-  ____  ___  __  __ ____  _     _____ _____ _____      /\   /\
- / ___|/ _ \|  \/  |  _ \| |   | ____|_   _| ____|    (  ._. )
-| |   | | | | |\/| | |_) | |   |  _|   | | |  _|       > ^ <
-| |___| |_| | |  | |  __/| |___| |___  | | | |___     /     \
- \____|\___/|_|  |_|_|   |_____|_____| |_| |_____|   /_______\
+	fmt.Printf("\033[33m📋 Configuration:\033[0m\n")
+	fmt.Printf("   • Container Name : %s\n", containerName)
+	fmt.Printf("   • Repository Path: %s\n", path)
+	fmt.Printf("   • Port          : %d\n\n", containerPort)
 
-`)
-
-	fmt.Println("╔══════════════════════════════════════════════════════════════════╗")
-	fmt.Println("║                   🎉 SETUP COMPLETE! 🎉                          ║")
-	fmt.Println("╠══════════════════════════════════════════════════════════════════╣")
-	fmt.Printf("║ 📦 Container Name : %-44s ║\n", containerName)
-	fmt.Printf("║ 📂 Repository Path: %-44s ║\n", path)
-	fmt.Printf("║ 🌐 Port          : %-45d ║\n", containerPort)
-	fmt.Println("╠══════════════════════════════════════════════════════════════════╣")
-	fmt.Println("║                          Next Steps:                             ║")
-	fmt.Printf("║  • Open VS Code: code %-42s ║\n", path)
-	fmt.Printf("║  • Access app  : http://localhost:%-30d ║\n", containerPort)
-	fmt.Println("║  • Start coding in the devcontainer! 🚀                          ║")
-	fmt.Println("╚══════════════════════════════════════════════════════════════════╝")
+	fmt.Printf("\033[36m🚀 Next steps:\033[0m\n")
+	fmt.Printf("   1. Open VS Code:\n")
+	fmt.Printf("      $ \033[36mcode %s\033[0m\n\n", path)
+	fmt.Printf("   2. Access your application:\n")
+	fmt.Printf("      🌐 \033[36mhttp://localhost:%d\033[0m\n\n", containerPort)
+	fmt.Printf("   3. Start coding in the devcontainer!\n\n")
 
 	codeVersionCommand := exec.Command("code", "--version")
 
