@@ -168,7 +168,7 @@ function App() {
               </div>
 
               {/* Terminal Content */}
-              <div className="p-4 space-y-1 h-40 overflow-hidden flex flex-col">
+              <div className="p-4 space-y-1 h-40 overflow-hidden flex flex-col text-left">
                 <div className="flex-1 min-h-0">
                   {terminalLines.map((line, index) => (
                     <div
