@@ -1105,7 +1105,8 @@ func cloneProject(p *PHPService) {
 
 	go utils.ShowLoadingIndicator("Starting Docker containers", done)
 
-	if err := utils.UpWithBuild(path); err != nil {
+	// if err := utils.UpWithBuild(path); err != nil {
+	if err := p.containerRepo.CreateContainer(path); err != nil {
 		done <- true
 		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to start Docker containers\n")
 

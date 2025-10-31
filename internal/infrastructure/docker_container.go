@@ -1,15 +1,27 @@
 package infrastructure
 
+import (
+	"os/exec"
+)
+
 type DockerContainer struct {
-	TargetRepo string
+	path string
 }
 
-func NewDockerContainer(targetRepo string) *DockerContainer {
+func NewDockerContainer(path string) *DockerContainer {
 	return &DockerContainer{
-		TargetRepo: targetRepo,
+		path: path,
 	}
 }
 
-func (d *DockerContainer) CreateContainer(targetRepo string) error {
+func (d *DockerContainer) CreateContainer(path string) error {
+	cmd := exec.Command("docker", "compose", "up", "-d", "--build")
+
+	cmd.Dir = path
+
+	if _, err := cmd.CombinedOutput(); err != nil {
+		return err
+	}
+
 	return nil
 }
