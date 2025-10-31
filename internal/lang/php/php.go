@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"myenv/internal/config"
+	"myenv/internal/infrastructure"
 	"myenv/internal/utils"
 	"os"
 	"os/exec"
@@ -12,6 +13,16 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 )
+
+type PHPService struct {
+	containerRepo infrastructure.ContainerInterface
+}
+
+func newPHPService(container infrastructure.ContainerInterface) *PHPService {
+	return &PHPService{
+		containerRepo: container,
+	}
+}
 
 type PHPProjectDetail struct {
 	Name    string            `json:"container_name"`
@@ -41,10 +52,13 @@ func PHP() {
 		log.Fatal(err)
 	}
 
+	containerRepo := infrastructure.NewDockerContainer("https://github.com/takashiraki/docker_php.git")
+	newPHPService := newPHPService(containerRepo)
+
 	switch clone {
 	case "Yes":
 		fmt.Println("Clone project")
-		cloneProject()
+		cloneProject(newPHPService)
 	case "No":
 		fmt.Println("Create project")
 		createProject()
@@ -328,7 +342,7 @@ func createConfigFile(containerName string, containerPort int, path string, lang
 	}
 }
 
-func cloneProject() {
+func cloneProject(p *PHPService) {
 	gitRepo := ""
 	gitRepoPrompt := &survey.Input{
 		Message: "Enter the Git repository URL of PHP project : ",
