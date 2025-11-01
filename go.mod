@@ -1,4 +1,4 @@
-cmd/root.gomodule myenv
+module myenv
 
 go 1.24.5
 
