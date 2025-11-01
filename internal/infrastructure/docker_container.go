@@ -4,14 +4,10 @@ import (
 	"os/exec"
 )
 
-type DockerContainer struct {
-	path string
-}
+type DockerContainer struct{}
 
-func NewDockerContainer(path string) *DockerContainer {
-	return &DockerContainer{
-		path: path,
-	}
+func NewDockerContainer() *DockerContainer {
+	return &DockerContainer{}
 }
 
 func (d *DockerContainer) CreateContainer(path string) error {

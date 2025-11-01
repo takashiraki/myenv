@@ -15,12 +15,16 @@ import (
 )
 
 type PHPService struct {
-	containerRepo infrastructure.ContainerInterface
+	container            infrastructure.ContainerInterface
+	repository_interface infrastructure.RepositoryInterface
 }
 
-func newPHPService(container infrastructure.ContainerInterface) *PHPService {
+func newPHPService(
+	container infrastructure.ContainerInterface,
+	repository infrastructure.RepositoryInterface) *PHPService {
 	return &PHPService{
-		containerRepo: container,
+		container:            container,
+		repository_interface: repository,
 	}
 }
 
@@ -52,8 +56,9 @@ func PHP() {
 		log.Fatal(err)
 	}
 
-	containerRepo := infrastructure.NewDockerContainer("https://github.com/takashiraki/docker_php.git")
-	newPHPService := newPHPService(containerRepo)
+	containerRepo := infrastructure.NewDockerContainer()
+	gitRepo := infrastructure.NewGitRepository()
+	newPHPService := newPHPService(containerRepo, gitRepo)
 
 	switch clone {
 	case "Yes":
@@ -436,7 +441,8 @@ func cloneProject(p *PHPService) {
 
 	go utils.ShowLoadingIndicator("Cloning repository", done)
 
-	if err := utils.CloneRepo(targetRepo, path); err != nil {
+	// if err := utils.CloneRepo(targetRepo, path); err != nil {
+	if err := p.repository_interface.CloneRepo(targetRepo, path); err != nil {
 		done <- true
 		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to clone PHP project\n")
 
@@ -538,7 +544,8 @@ func cloneProject(p *PHPService) {
 
 	srcTargetPath := filepath.Join(path, "src", containerName)
 
-	if err := utils.CloneRepo(gitRepo, srcTargetPath); err != nil {
+	// if err := utils.CloneRepo(gitRepo, srcTargetPath); err != nil {
+	if err := p.repository_interface.CloneRepo(gitRepo, srcTargetPath); err != nil {
 		done <- true
 		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to clone PHP project\n")
 
@@ -1106,7 +1113,7 @@ func cloneProject(p *PHPService) {
 	go utils.ShowLoadingIndicator("Starting Docker containers", done)
 
 	// if err := utils.UpWithBuild(path); err != nil {
-	if err := p.containerRepo.CreateContainer(path); err != nil {
+	if err := p.container.CreateContainer(path); err != nil {
 		done <- true
 		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to start Docker containers\n")
 
