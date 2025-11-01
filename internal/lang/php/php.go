@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"myenv/internal/config"
+	"myenv/internal/infrastructure"
 	"myenv/internal/utils"
 	"os"
 	"os/exec"
@@ -12,6 +13,20 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 )
+
+type PHPService struct {
+	container            infrastructure.ContainerInterface
+	repository_interface infrastructure.RepositoryInterface
+}
+
+func newPHPService(
+	container infrastructure.ContainerInterface,
+	repository infrastructure.RepositoryInterface) *PHPService {
+	return &PHPService{
+		container:            container,
+		repository_interface: repository,
+	}
+}
 
 type PHPProjectDetail struct {
 	Name    string            `json:"container_name"`
@@ -41,10 +56,14 @@ func PHP() {
 		log.Fatal(err)
 	}
 
+	containerRepo := infrastructure.NewDockerContainer()
+	gitRepo := infrastructure.NewGitRepository()
+	newPHPService := newPHPService(containerRepo, gitRepo)
+
 	switch clone {
 	case "Yes":
 		fmt.Println("Clone project")
-		cloneProject()
+		cloneProject(newPHPService)
 	case "No":
 		fmt.Println("Create project")
 		createProject()
@@ -328,7 +347,7 @@ func createConfigFile(containerName string, containerPort int, path string, lang
 	}
 }
 
-func cloneProject() {
+func cloneProject(p *PHPService) {
 	gitRepo := ""
 	gitRepoPrompt := &survey.Input{
 		Message: "Enter the Git repository URL of PHP project : ",
@@ -422,7 +441,8 @@ func cloneProject() {
 
 	go utils.ShowLoadingIndicator("Cloning repository", done)
 
-	if err := utils.CloneRepo(targetRepo, path); err != nil {
+	// if err := utils.CloneRepo(targetRepo, path); err != nil {
+	if err := p.repository_interface.CloneRepo(targetRepo, path); err != nil {
 		done <- true
 		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to clone PHP project\n")
 
@@ -524,7 +544,8 @@ func cloneProject() {
 
 	srcTargetPath := filepath.Join(path, "src", containerName)
 
-	if err := utils.CloneRepo(gitRepo, srcTargetPath); err != nil {
+	// if err := utils.CloneRepo(gitRepo, srcTargetPath); err != nil {
+	if err := p.repository_interface.CloneRepo(gitRepo, srcTargetPath); err != nil {
 		done <- true
 		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to clone PHP project\n")
 
@@ -1091,7 +1112,8 @@ func cloneProject() {
 
 	go utils.ShowLoadingIndicator("Starting Docker containers", done)
 
-	if err := utils.UpWithBuild(path); err != nil {
+	// if err := utils.UpWithBuild(path); err != nil {
+	if err := p.container.CreateContainer(path); err != nil {
 		done <- true
 		fmt.Printf("\r\033[K\033[31m✗ Error:\033[0m Failed to start Docker containers\n")
 
