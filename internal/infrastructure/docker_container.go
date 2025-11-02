@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"errors"
 	"os/exec"
 )
 
@@ -15,8 +16,8 @@ func (d *DockerContainer) CreateContainer(path string) error {
 
 	cmd.Dir = path
 
-	if _, err := cmd.CombinedOutput(); err != nil {
-		return err
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return errors.New("Error running docker compose up -d --build: " + err.Error() + ", output: " + string(output))
 	}
 
 	return nil

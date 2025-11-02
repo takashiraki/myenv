@@ -1,6 +1,9 @@
 package infrastructure
 
-import "os/exec"
+import (
+	"errors"
+	"os/exec"
+)
 
 type GitRepository struct{}
 
@@ -11,10 +14,8 @@ func NewGitRepository() *GitRepository {
 func (d *GitRepository) CloneRepo(repoUrl string, targetPath string) error {
 	cmd := exec.Command("git", "clone", repoUrl, targetPath)
 
-	_, err := cmd.CombinedOutput()
-
-	if err != nil {
-		return err
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return errors.New("Error running git clone: " + err.Error() + ", output: " + string(output))
 	}
 
 	return nil
