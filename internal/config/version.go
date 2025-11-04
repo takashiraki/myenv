@@ -63,15 +63,12 @@ func GetLatestVersion() (string, error) {
 	return "v" +version, nil
 }
 
-// 現在のバージョンと最新バージョンを比較してアップデート通知を表示
 func CheckForUpdates(currentVersion string) {
 	latestVersion, err := GetLatestVersion()
 	if err != nil {
-		// エラーが発生しても通知は表示しない（静かに失敗）
 		return
 	}
 
-	// vプレフィックスを削除して比較
 	current := strings.TrimPrefix(currentVersion, "v")
 	latest := strings.TrimPrefix(latestVersion, "v")
 
