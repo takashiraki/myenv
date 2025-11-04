@@ -4,7 +4,7 @@ A CLI tool for rapidly creating and managing containerized development environme
 
 ## Overview
 
-MyEnv streamlines the process of setting up development environments by automating Docker container creation, port management, and project configuration. Currently supports PHP projects including Laravel and other frameworks.
+MyEnv streamlines the process of setting up development environments by automating Docker container creation, port management, and project configuration. Currently supports PHP projects.
 
 ## Features
 
@@ -17,7 +17,7 @@ MyEnv streamlines the process of setting up development environments by automati
 ## Installation
 
 ```bash
-go install github.com/takashiraki/myenv@latest
+brew install takashiraki/tap/myenv
 ```
 
 ## Usage
@@ -28,32 +28,32 @@ go install github.com/takashiraki/myenv@latest
 myenv init
 ```
 
-You can also specify the language and framework using flags:
+You can also specify the language using flags:
 
 ```bash
-myenv init --lang PHP --framework Laravel
+myenv init --lang PHP
 ```
 
 This will:
-1. Prompt for language and framework selection (if not specified)
+1. Prompt for language selection (if not specified)
 2. Ask for container name and port configuration
 3. Clone the appropriate Docker template
 4. Generate environment configuration files
 5. Build and start the containers
-6. Create a new project with the selected framework
+6. Create a new project
 7. Optionally open the project in VS Code
 
 ### Available Commands
 
 - `myenv init` - Create a new development environment
-- `myenv init -l PHP -f Laravel` - Create a Laravel project directly
+- `myenv init -l PHP` - Create a PHP project directly
 - `myenv --help` - Show available commands and options
 - `myenv --version` - Show version information
 
 ## Requirements
 
 - Docker and Docker Compose
-- Go 1.24.5 or later
+- Go 1.21 or later (for development)
 - Git
 
 ## Development
