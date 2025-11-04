@@ -33,20 +33,10 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := config.CheckConfig(); err != nil {
-			fmt.Print(`
-╔═══════════════════════════════════════════════════════╗
-║              ⚠️  Configuration Missing                 ║
-║                                                       ║
-║  No configuration found. Please run the following     ║
-║  command first to initialize myenv:                   ║
-║                                                       ║
-║  🚀 myenv                                             ║
-║                                                       ║
-║  This will create the necessary configuration         ║
-║  files in ~/.config/myenv/                            ║
-╚═══════════════════════════════════════════════════════╝
-
-`)
+			fmt.Println("\n\033[31m✗ Error:\033[0m Configuration Missing")
+			fmt.Println("\nNo configuration found. Please run the following command first to initialize myenv:")
+			fmt.Println("\n  myenv")
+			fmt.Println("\nThis will create the necessary configuration files in ~/.config/myenv/")
 			return
 		}
 

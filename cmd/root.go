@@ -11,27 +11,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "v0.2.5"
+var version = "v0.3.0"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:     "myenv",
 	Version: version,
 	Short:   "A CLI tool for managing containerized development environments",
-	Long: `
-╔═══════════════════════════════════════════════════════╗
-║                    myenv ` + version + `                       ║
-║                                                       ║
-║  🚀 Containerized development environments            ║
-║                                                       ║
-║  • Automated Docker container setup                   ║
-║  • Smart port management & conflict prevention        ║
-║  • VS Code integration with devcontainer support      ║
-║  • Pre-configured development templates               ║
-║                                                       ║
-║  Get started: myenv init                              ║
-╚═══════════════════════════════════════════════════════╝
-`,
+	Long: `myenv ` + version,
 	Run: func(cmd *cobra.Command, args []string) {
 		config.GetConfig(strings.TrimPrefix(version, "v"))
 		cmd.Help()
