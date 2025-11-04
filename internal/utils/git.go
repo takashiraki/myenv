@@ -1,18 +1,27 @@
 package utils
 
 import (
-	"errors"
-	"os/exec"
+	"fmt"
+	"myenv/internal/infrastructure"
 )
 
-func CloneRepo(repoUrl string, targetPath string) error {
-	command := exec.Command("git", "clone", repoUrl, targetPath)
+func CloneRepoHandle(
+	p infrastructure.RepositoryInterface,
+	repoUrl string,
+	path string,
+) error {
+	done := make(chan bool)
 
-	output, err := command.CombinedOutput()
+	go ShowLoadingIndicator("Cloning repository", done)
 
-	if err != nil {
-		return errors.New("error cloning repository: " + string(output) + `\nPlease make sure that the repository URL is correct and you have access to it.\n` + err.Error())
+	if err := p.CloneRepo(repoUrl, path); err != nil {
+		done <- true
+
+		fmt.Printf("\r\033[31m✗ Error:\033[0m Failed to clone repository\n")
+
+		errMsg := err.Error()
 	}
 
+	done <- true
 	return nil
 }
