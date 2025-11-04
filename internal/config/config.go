@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"myenv/internal/utils"
 	"os"
 	"path/filepath"
@@ -17,10 +18,16 @@ type Project struct {
 }
 
 type Config struct {
-	Lang             string             `json:"lang"`
-	Version          string             `json:"version"`
-	ContainerRuntime string             `json:"containerRuntime"`
-	Projects         map[string]Project `json:"projects"`
+	Lang              string             `json:"lang"`
+	Version           string             `json:"version"`
+	ContainerRuntime  string             `json:"containerRuntime"`
+	Projects          map[string]Project `json:"projects"`
+	Modules           map[string]ModuleConfig `json:"modules"`
+}
+
+type ModuleConfig struct {
+	Name string `json:"name"`
+	Path string `json:"path"`
 }
 
 func GetConfig(version string) {
@@ -171,6 +178,97 @@ func DeleteProjectConfig(projectName string) error {
 	}
 
 	delete(config.Projects, projectName)
+
+	if err := SaveConfig(config); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func LoadModuleConfig() (*ModuleConfig, error) {
+	homeDir, err := os.UserHomeDir()
+
+	if err != nil {
+		return nil, err
+	}
+
+	envFilePath := filepath.Join(homeDir, ".config", "myenv", "config.json")
+
+	if _, err := os.Stat(envFilePath); os.IsNotExist(err) {
+		return nil, err
+	}
+
+	data, err := os.ReadFile(envFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var config ModuleConfig
+
+	if err := json.Unmarshal(data, &config); err != nil {
+		return nil, err
+	}
+
+	return &config, nil
+}
+
+func SaveModuleConfig(config *ModuleConfig) error {
+	homeDir, err := os.UserHomeDir()
+
+	if err != nil {
+		return err
+	}
+
+	envFilePath := filepath.Join(homeDir, ".config", "myenv", "config.json")
+
+	if !utils.DirIsExists(envFilePath) {
+		return errors.New("config file does not exist")
+	}
+
+	data, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	if err := os.WriteFile(envFilePath, data, 0644); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func AddModuleConfig(moduleName string, modulePath string) error {
+	config, err := LoadConfig()
+
+	if err != nil {
+		return err
+	}
+
+	if config.Modules == nil {
+		config.Modules = make(map[string]ModuleConfig)
+	}
+
+	config.Modules[moduleName] = ModuleConfig{
+		Name: moduleName,
+		Path: modulePath,
+	}
+
+	if err := SaveConfig(config); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteModulConfig(moduleName string) error {
+	config, err := LoadConfig()
+
+	if err != nil {
+		return err
+	}
+
+	delete(config.Modules,moduleName)
 
 	if err := SaveConfig(config); err != nil {
 		return err
