@@ -30,7 +30,7 @@ func newPHPService(
 
 type PHPProjectDetail struct {
 	Name    string            `json:"container_name"`
-	Port    int               `json:"container_port"`
+	Proxy   string            `json:"proxy"`
 	Path    string            `json:"path"`
 	Lang    string            `json:"lang"`
 	Fw      string            `json:"framework"`
@@ -92,7 +92,7 @@ func createProject(p *PHPService) {
 
 	containerPort := 0
 	containerPortPrompt := &survey.Input{
-		Message: "Enter the port of PHP : ",
+		Message: "Enter the local domain (e.g., myapp.localhost): ",
 	}
 
 	portErr := survey.AskOne(
