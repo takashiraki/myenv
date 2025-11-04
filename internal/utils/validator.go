@@ -68,6 +68,43 @@ func DirIsExists(dir string) bool {
 	return !os.IsNotExist(err)
 }
 
+func ValidateProxy(val any) error {
+	var proxy string
+
+	switch v := val.(type) {
+	case string:
+		proxy = v
+	case int:
+		proxy = strconv.Itoa(v)
+	default:
+		return errors.New("invalid type: proxy must be a string or integer")
+	}
+
+	if !strings.HasSuffix(proxy, ".localhost") {
+		return errors.New("proxy must end with .localhost")
+	}
+
+	domain := strings.TrimSuffix(proxy, ".localhost")
+
+	if domain == "" {
+		return errors.New("invalid proxy format")
+	}
+
+	usedProxies, err := getUsedProxy()
+
+	if err != nil {
+		return err
+	}
+
+	for _, usedusedProxy := range usedProxies {
+		if proxy == usedusedProxy {
+			return errors.New("proxy is already in use")
+		}
+	}
+
+	return nil
+}
+
 func ValidatePort(val any) error {
 	var port int
 
@@ -105,6 +142,44 @@ func ValidatePort(val any) error {
 	}
 
 	return nil
+}
+
+func getUsedProxy() ([]string, error) {
+	homeDir, err := os.UserHomeDir()
+
+	if err != nil {
+		return nil, errors.New("error getting home directory")
+	}
+
+	targetPath := filepath.Join(homeDir, ".config", "myenv", "config.json")
+
+	if os.Stat(targetPath); os.IsNotExist(err) {
+		return nil, errors.New("config file does not exist")
+	}
+
+	data, err := os.ReadFile(targetPath)
+
+	if err != nil {
+		return nil, errors.New("error reading config file")
+	}
+
+	var config struct {
+		Projects map[string]struct {
+			Proxy string `json:"proxy"`
+		} `json:"projects`
+	}
+
+	if err := json.Unmarshal(data, &config); err != nil {
+		return nil, errors.New("error parsing config file")
+	}
+
+	var usedProxys []string
+
+	for _, project := range config.Projects {
+		usedProxys = append(usedProxys, project.Proxy)
+	}
+
+	return usedProxys, nil
 }
 
 func getUsedPort() ([]int, error) {
