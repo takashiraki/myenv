@@ -43,7 +43,7 @@ func TestMain(m *testing.M) {
 	}
 
 	containerName := "myenv_test_container"
-	containerPort := 8080
+	containerProxy := "myapp.localhost"
 	path := "./testdata/docker-compose"
 	lang := "php"
 	fw := "none"
@@ -51,7 +51,7 @@ func TestMain(m *testing.M) {
 		"type": "clone",
 	}
 
-	AddProjectConfig(containerName, containerPort, path, lang, fw, options)
+	AddProjectConfig(containerName, containerProxy, path, lang, fw, options)
 
 	exitCode := m.Run()
 
