@@ -10,7 +10,7 @@ import (
 
 type Project struct {
 	ContainerName string            `json:"container_name"`
-	ContainerPort int               `json:"container_port"`
+	ContainerProxy string            `json:"container_proxy"`
 	Path          string            `json:"path"`
 	Lang          string            `json:"lang"`
 	Fw            string            `json:"framework"`
@@ -143,7 +143,7 @@ func SaveConfig(config *Config) error {
 	return nil
 }
 
-func AddProjectConfig(containerName string, containerPort int, path string, lang string, fw string, options map[string]string) error {
+func AddProjectConfig(containerName string, containerProxy string, path string, lang string, fw string, options map[string]string) error {
 	config, err := LoadConfig()
 
 	if err != nil {
@@ -156,7 +156,7 @@ func AddProjectConfig(containerName string, containerPort int, path string, lang
 
 	config.Projects[containerName] = Project{
 		ContainerName: containerName,
-		ContainerPort: containerPort,
+		ContainerProxy: containerProxy,
 		Path:          path,
 		Lang:          lang,
 		Fw:            fw,
