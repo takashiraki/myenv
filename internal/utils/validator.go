@@ -45,7 +45,7 @@ func ValidateDirectory(val any) error {
 	case string:
 		dir = v
 	default:
-		return errors.New("invalid type: directory must be a string.")
+		return errors.New("invalid type: directory must be a string")
 	}
 
 	homeDir, err := os.UserHomeDir()
@@ -257,7 +257,7 @@ func ValidateGitRepoUrl(val any) error {
 	case string:
 		repo = v
 	default:
-		return errors.New("invalid type: git repository must be a string.")
+		return errors.New("invalid type: git repository must be a string")
 	}
 
 	u, err := url.Parse(repo)
@@ -284,7 +284,7 @@ func ValidateGitRepoProjectExists(val any) error {
 	case string:
 		repo = v
 	default:
-		return errors.New("invalid type: git repository must be a string.")
+		return errors.New("invalid type: git repository must be a string")
 	}
 
 	repoName := ExtractionRepoName(repo)

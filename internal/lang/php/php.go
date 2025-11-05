@@ -72,6 +72,30 @@ func PHP() {
 }
 
 func createProject(p *PHPService) {
+	if err := p.container.ChechProxyNetworkExists(); err != nil {
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
+
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "proxy_network does not exist"):
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m The proxy network has not been set up yet.\n")
+			fmt.Fprintf(os.Stderr, "           Please run the proxy module setup first to create the proxy network.\n")
+		case strings.Contains(errMsg, "Cannot connect to the Docker daemon"):
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker daemon is not running.\n")
+			fmt.Fprintf(os.Stderr, "           Please start Docker Desktop or Docker daemon and try again.\n")
+		case strings.Contains(errMsg, "command not found"):
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker is not installed on your system.\n")
+			fmt.Fprintf(os.Stderr, "           Please install Docker from https://docs.docker.com/get-docker/ and try again.\n")
+		case strings.Contains(errMsg, "permission denied"):
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m You don't have permission to access Docker.\n")
+			fmt.Fprintf(os.Stderr, "           Please add your user to the docker group or run with appropriate permissions.\n")
+		default:
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Please check your Docker setup and try again.\n")
+		}
+
+		return
+	}
+
 	containerName := ""
 	containerNamePrompt := &survey.Input{
 		Message: "Enter the container name of PHP : ",
@@ -889,6 +913,30 @@ func cloneProject(p *PHPService) {
 	gitRepo := ""
 	gitRepoPrompt := &survey.Input{
 		Message: "Enter the Git repository URL of PHP project : ",
+	}
+
+	if err := p.container.ChechProxyNetworkExists(); err != nil {
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
+
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "proxy_network does not exist"):
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m The proxy network has not been set up yet.\n")
+			fmt.Fprintf(os.Stderr, "           Please run the proxy module setup first to create the proxy network.\n")
+		case strings.Contains(errMsg, "Cannot connect to the Docker daemon"):
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker daemon is not running.\n")
+			fmt.Fprintf(os.Stderr, "           Please start Docker Desktop or Docker daemon and try again.\n")
+		case strings.Contains(errMsg, "command not found"):
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker is not installed on your system.\n")
+			fmt.Fprintf(os.Stderr, "           Please install Docker from https://docs.docker.com/get-docker/ and try again.\n")
+		case strings.Contains(errMsg, "permission denied"):
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m You don't have permission to access Docker.\n")
+			fmt.Fprintf(os.Stderr, "           Please add your user to the docker group or run with appropriate permissions.\n")
+		default:
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Please check your Docker setup and try again.\n")
+		}
+
+		return
 	}
 
 	err := survey.AskOne(
