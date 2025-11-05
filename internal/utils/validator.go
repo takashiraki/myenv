@@ -165,8 +165,8 @@ func getUsedProxy() ([]string, error) {
 
 	var config struct {
 		Projects map[string]struct {
-			Proxy string `json:"proxy"`
-		} `json:"projects`
+			ContainerProxy string `json:"container_proxy"`
+		} `json:"projects"`
 	}
 
 	if err := json.Unmarshal(data, &config); err != nil {
@@ -176,7 +176,7 @@ func getUsedProxy() ([]string, error) {
 	var usedProxys []string
 
 	for _, project := range config.Projects {
-		usedProxys = append(usedProxys, project.Proxy)
+		usedProxys = append(usedProxys, project.ContainerProxy)
 	}
 
 	return usedProxys, nil

@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/AlecAivazis/survey/v2"
 )
@@ -90,15 +91,15 @@ func createProject(p *PHPService) {
 		return
 	}
 
-	containerPort := 0
-	containerPortPrompt := &survey.Input{
+	containerProxy := ""
+	containerProxyPrompt := &survey.Input{
 		Message: "Enter the local domain (e.g., myapp.localhost): ",
 	}
 
 	portErr := survey.AskOne(
-		containerPortPrompt, &containerPort,
+		containerProxyPrompt, &containerProxy,
 		survey.WithValidator(survey.Required),
-		survey.WithValidator(utils.ValidatePort),
+		survey.WithValidator(utils.ValidateProxy),
 	)
 
 	if portErr != nil {
@@ -121,7 +122,7 @@ func createProject(p *PHPService) {
 	fmt.Printf("\033[33m📋 Configuration:\033[0m\n")
 	fmt.Printf("   • Container name : %s\n", containerName)
 	fmt.Printf("   • Clone path     : %s\n", path)
-	fmt.Printf("   • Port           : %d\n", containerPort)
+	fmt.Printf("   • Proxy          : %s\n", containerProxy)
 	fmt.Printf("   • Framework      : None\n")
 	fmt.Printf("   • Language       : PHP\n\n")
 
@@ -147,7 +148,7 @@ func createProject(p *PHPService) {
 		"type": "new",
 	}
 
-	createConfigFile(containerName, containerPort, path, lang, fw, options)
+	createConfigFile(containerName, containerProxy, path, lang, fw, options)
 
 	targetRepo := "https://github.com/takashiraki/docker_php.git"
 
@@ -259,7 +260,6 @@ func createProject(p *PHPService) {
 	envFilePath := filepath.Join(path, ".env")
 
 	repositoryPath := "src"
-	hostPort := 80
 
 	content, err := os.ReadFile(envFilePath)
 
@@ -313,8 +313,8 @@ func createProject(p *PHPService) {
 	replacements := map[string]any{
 		"REPOSITORY_PATH=": fmt.Sprintf("REPOSITORY_PATH=%s", repositoryPath),
 		"CONTAINER_NAME=":  fmt.Sprintf("CONTAINER_NAME=%s", containerName),
-		"HOST_PORT=":       fmt.Sprintf("HOST_PORT=%d", containerPort),
-		"CONTAINER_PORT=":  fmt.Sprintf("CONTAINER_PORT=%d", hostPort),
+		"VIRTUAL_HOST=":       fmt.Sprintf("VIRTUAL_HOST=%s", containerProxy),
+		"TZ=": fmt.Sprintf("TZ=%s", time.Now().Location().String()),
 	}
 
 	if err := utils.ReplaceAllValue(&updateContent, replacements); err != nil {
@@ -339,14 +339,6 @@ func createProject(p *PHPService) {
 			fmt.Fprintf(os.Stderr, "   Option 2: Manually edit the .env file with correct values\n\n")
 			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m Fix the template format and try again\n\n")
 
-		case strings.Contains(errMsg, "invalid") || strings.Contains(errMsg, "empty"):
-			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Invalid configuration:\033[0m\n")
-			fmt.Fprintf(os.Stderr, "   One of the configuration values is invalid\n\n")
-			fmt.Fprintf(os.Stderr, "   Container name: %s\n", containerName)
-			fmt.Fprintf(os.Stderr, "   Container port: %d\n\n", containerPort)
-			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m This shouldn't happen normally.\n")
-			fmt.Fprintf(os.Stderr, "   Please report this as a bug\n\n")
-
 		default:
 			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Unexpected error:\033[0m\n")
 			fmt.Fprintf(os.Stderr, "   Details: %v\n\n", err)
@@ -356,7 +348,7 @@ func createProject(p *PHPService) {
 			fmt.Fprintf(os.Stderr, "   Set these values:\n")
 			fmt.Fprintf(os.Stderr, "   • REPOSITORY_PATH=%s\n", repositoryPath)
 			fmt.Fprintf(os.Stderr, "   • CONTAINER_NAME=%s\n", containerName)
-			fmt.Fprintf(os.Stderr, "   • HOST_PORT=%d\n", containerPort)
+			fmt.Fprintf(os.Stderr, "   • VIRTUAL_HOST=%s\n", containerProxy)
 			fmt.Fprintf(os.Stderr, "   • CONTAINER_PORT=80\n\n")
 			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m After manual edit, continue with docker compose up\n\n")
 		}
@@ -442,17 +434,6 @@ func createProject(p *PHPService) {
 			fmt.Fprintf(os.Stderr, "             $ \033[36msudo systemctl start docker\033[0m\n\n")
 
 			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Start Docker and try again\n\n")
-
-		case strings.Contains(errMsg, "port is already allocated") || strings.Contains(errMsg, "address already in use"):
-			fmt.Fprintf(os.Stderr, "\n\033[33m💡 What happened:\033[0m\n")
-			fmt.Fprintf(os.Stderr, "   Port %d is already in use by another application\n\n", containerPort)
-
-			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
-			fmt.Fprintf(os.Stderr, "   Option 1: Find and stop the conflicting process:\n")
-			fmt.Fprintf(os.Stderr, "             $ \033[36msudo lsof -i :%d\033[0m\n\n", containerPort)
-			fmt.Fprintf(os.Stderr, "   Option 2: Use a different port when running this setup\n\n")
-
-			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Free up the port and try again\n\n")
 
 		case strings.Contains(errMsg, "permission denied"):
 			fmt.Fprintf(os.Stderr, "\n\033[33m💡 What happened:\033[0m\n")
@@ -861,13 +842,13 @@ func createProject(p *PHPService) {
 	fmt.Printf("\033[33m📋 Configuration:\033[0m\n")
 	fmt.Printf("   • Container Name : %s\n", containerName)
 	fmt.Printf("   • Repository Path: %s\n", path)
-	fmt.Printf("   • Port          : %d\n\n", containerPort)
+	fmt.Printf("   • Proxy          : %s\n\n", containerProxy)
 
 	fmt.Printf("\033[36m🚀 Next steps:\033[0m\n")
 	fmt.Printf("   1. Open VS Code:\n")
 	fmt.Printf("      $ \033[36mcode %s\033[0m\n\n", path)
 	fmt.Printf("   2. Access your application:\n")
-	fmt.Printf("      🌐 \033[36mhttp://localhost:%d\033[0m\n\n", containerPort)
+	fmt.Printf("      🌐 \033[36mhttp://%s\033[0m\n\n", containerProxy)
 	fmt.Printf("   3. Start coding in the devcontainer!\n\n")
 
 	codeVersionCommand := exec.Command("code", "--version")
@@ -896,8 +877,8 @@ func createProject(p *PHPService) {
 	}
 }
 
-func createConfigFile(containerName string, containerPort int, path string, lang string, fw string, options map[string]string) {
-	err := config.AddProjectConfig(containerName, containerPort, path, lang, fw, options)
+func createConfigFile(containerName string, containerProxy string, path string, lang string, fw string, options map[string]string) {
+	err := config.AddProjectConfig(containerName, containerProxy, path, lang, fw, options)
 
 	if err != nil {
 		log.Fatal(err)
@@ -922,15 +903,15 @@ func cloneProject(p *PHPService) {
 		return
 	}
 
-	containerPort := 0
-	containerPortPrompt := &survey.Input{
-		Message: "Enter the port of PHP : ",
+	containerProxy := ""
+	containerProxyPrompt := &survey.Input{
+		Message: "Enter the local domain (e.g., myapp.localhost): ",
 	}
 
 	portErr := survey.AskOne(
-		containerPortPrompt, &containerPort,
+		containerProxyPrompt, &containerProxy,
 		survey.WithValidator(survey.Required),
-		survey.WithValidator(utils.ValidatePort),
+		survey.WithValidator(utils.ValidateProxy),
 	)
 
 	if portErr != nil {
@@ -956,7 +937,7 @@ func cloneProject(p *PHPService) {
 	fmt.Printf("\033[33m📋 Configuration:\033[0m\n")
 	fmt.Printf("   • Container name : %s\n", containerName)
 	fmt.Printf("   • Clone path     : %s\n", path)
-	fmt.Printf("   • Port           : %d\n", containerPort)
+	fmt.Printf("   • Proxy          : %s\n", containerProxy)
 	fmt.Printf("   • Framework      : None\n")
 	fmt.Printf("   • Language       : PHP\n\n")
 
@@ -985,7 +966,7 @@ func cloneProject(p *PHPService) {
 
 	createConfigFile(
 		containerName,
-		containerPort,
+		containerProxy,
 		path,
 		lang,
 		fw,
@@ -1160,7 +1141,6 @@ func cloneProject(p *PHPService) {
 	envFilePath := filepath.Join(path, ".env")
 
 	repositoryPath := fmt.Sprintf("src/%s", containerName)
-	hostPort := 80
 
 	content, err := os.ReadFile(envFilePath)
 
@@ -1214,8 +1194,8 @@ func cloneProject(p *PHPService) {
 	replacements := map[string]interface{}{
 		"REPOSITORY_PATH=": fmt.Sprintf("REPOSITORY_PATH=%s", repositoryPath),
 		"CONTAINER_NAME=":  fmt.Sprintf("CONTAINER_NAME=%s", containerName),
-		"HOST_PORT=":       fmt.Sprintf("HOST_PORT=%d", containerPort),
-		"CONTAINER_PORT=":  fmt.Sprintf("CONTAINER_PORT=%d", hostPort),
+		"VIRTUAL_HOST=":       fmt.Sprintf("VIRTUAL_HOST=%s", containerProxy),
+		"TZ=": fmt.Sprintf("TZ=%s", time.Now().Location().String()),
 	}
 
 	if err := utils.ReplaceAllValue(&updateContent, replacements); err != nil {
@@ -1231,7 +1211,7 @@ func cloneProject(p *PHPService) {
 			fmt.Fprintf(os.Stderr, "   The template might be missing placeholders like:\n")
 			fmt.Fprintf(os.Stderr, "   • REPOSITORY_PATH=\n")
 			fmt.Fprintf(os.Stderr, "   • CONTAINER_NAME=\n")
-			fmt.Fprintf(os.Stderr, "   • HOST_PORT=\n")
+			fmt.Fprintf(os.Stderr, "   • VIRTUAL_HOST=\n")
 			fmt.Fprintf(os.Stderr, "   • CONTAINER_PORT=\n\n")
 			fmt.Fprintf(os.Stderr, "\033[33m🔧 How to fix:\033[0m\n")
 			fmt.Fprintf(os.Stderr, "   Check the .env file:\n")
@@ -1244,7 +1224,7 @@ func cloneProject(p *PHPService) {
 			fmt.Fprintf(os.Stderr, "\n\033[33m💡 Invalid configuration:\033[0m\n")
 			fmt.Fprintf(os.Stderr, "   One of the configuration values is invalid\n\n")
 			fmt.Fprintf(os.Stderr, "   Container name: %s\n", containerName)
-			fmt.Fprintf(os.Stderr, "   Container port: %d\n\n", containerPort)
+			fmt.Fprintf(os.Stderr, "   Container proxy: %s\n\n", containerProxy)
 			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m This shouldn't happen normally.\n")
 			fmt.Fprintf(os.Stderr, "   Please report this as a bug\n\n")
 
@@ -1257,8 +1237,8 @@ func cloneProject(p *PHPService) {
 			fmt.Fprintf(os.Stderr, "   Set these values:\n")
 			fmt.Fprintf(os.Stderr, "   • REPOSITORY_PATH=src/%s\n", containerName)
 			fmt.Fprintf(os.Stderr, "   • CONTAINER_NAME=%s\n", containerName)
-			fmt.Fprintf(os.Stderr, "   • HOST_PORT=%d\n", containerPort)
-			fmt.Fprintf(os.Stderr, "   • CONTAINER_PORT=80\n\n")
+			fmt.Fprintf(os.Stderr, "   • VIRTUAL_HOST=%s\n", containerProxy)
+			fmt.Fprintf(os.Stderr, "   • TZ=%s\n", time.Now().Location().String())
 			fmt.Fprintf(os.Stderr, "\033[36m→ Next steps:\033[0m After manual edit, continue with docker compose up\n\n")
 		}
 
@@ -1692,17 +1672,6 @@ func cloneProject(p *PHPService) {
 
 			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Start Docker and try again\n\n")
 
-		case strings.Contains(errMsg, "port is already allocated") || strings.Contains(errMsg, "address already in use"):
-			fmt.Fprintf(os.Stderr, "\n\033[33m💡 What happened:\033[0m\n")
-			fmt.Fprintf(os.Stderr, "   Port %d is already in use by another application\n\n", containerPort)
-
-			fmt.Fprintf(os.Stderr, "\033[36m🔧 How to fix:\033[0m\n")
-			fmt.Fprintf(os.Stderr, "   Option 1: Find and stop the conflicting process:\n")
-			fmt.Fprintf(os.Stderr, "             $ \033[36msudo lsof -i :%d\033[0m\n\n", containerPort)
-			fmt.Fprintf(os.Stderr, "   Option 2: Use a different port when running this setup\n\n")
-
-			fmt.Fprintf(os.Stderr, "\033[32m→ Next:\033[0m Free up the port and try again\n\n")
-
 		case strings.Contains(errMsg, "permission denied"):
 			fmt.Fprintf(os.Stderr, "\n\033[33m💡 What happened:\033[0m\n")
 			fmt.Fprintf(os.Stderr, "   You don't have permission to run Docker commands\n\n")
@@ -1760,13 +1729,13 @@ func cloneProject(p *PHPService) {
 	fmt.Printf("\033[33m📋 Configuration:\033[0m\n")
 	fmt.Printf("   • Container Name : %s\n", containerName)
 	fmt.Printf("   • Repository Path: %s\n", path)
-	fmt.Printf("   • Port          : %d\n\n", containerPort)
+	fmt.Printf("   • Proxy          : %s\n\n", containerProxy)
 
 	fmt.Printf("\033[36m🚀 Next steps:\033[0m\n")
 	fmt.Printf("   1. Open VS Code:\n")
 	fmt.Printf("      $ \033[36mcode %s\033[0m\n\n", path)
 	fmt.Printf("   2. Access your application:\n")
-	fmt.Printf("      🌐 \033[36mhttp://localhost:%d\033[0m\n\n", containerPort)
+	fmt.Printf("      🌐 \033[36mhttp://%s\033[0m\n\n", containerProxy)
 	fmt.Printf("   3. Start coding in the devcontainer!\n\n")
 
 	codeVersionCommand := exec.Command("code", "--version")
