@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"myenv/internal/config/application"
 	"myenv/internal/infrastructure"
 	"myenv/internal/modules"
 	"myenv/internal/utils"
@@ -82,7 +83,12 @@ func addProxy() {
 
 	container := infrastructure.NewDockerContainer()
 	repository := infrastructure.NewGitRepository()
-	service := modules.NewProxyService(container, repository)
+	configService, err := application.NewConfigService()
+	if err != nil {
+		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
+	}
+	service := modules.NewProxyService(container, repository, *configService)
 
 	module := modules.Module{
 		Module: modules.ModuleConfig{
