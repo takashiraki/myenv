@@ -86,7 +86,7 @@ func createProject(p *PHPService) {
 		switch {
 		case strings.Contains(errMsg, "proxy_network does not exist"):
 			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m The proxy network has not been set up yet.\n")
-			fmt.Fprintf(os.Stderr, "           Please run the proxy module setup first to create the proxy network.\n")
+			fmt.Fprintf(os.Stderr, "           Please run: \033[36mmyenv add -m Proxy\033[0m\n")
 		case strings.Contains(errMsg, "Cannot connect to the Docker daemon"):
 			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker daemon is not running.\n")
 			fmt.Fprintf(os.Stderr, "           Please start Docker Desktop or Docker daemon and try again.\n")
@@ -936,7 +936,7 @@ func cloneProject(p *PHPService) {
 		switch {
 		case strings.Contains(errMsg, "proxy_network does not exist"):
 			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m The proxy network has not been set up yet.\n")
-			fmt.Fprintf(os.Stderr, "           Please run the proxy module setup first to create the proxy network.\n")
+			fmt.Fprintf(os.Stderr, "           Please run: \033[36mmyenv add -m Proxy\033[0m\n")
 		case strings.Contains(errMsg, "Cannot connect to the Docker daemon"):
 			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker daemon is not running.\n")
 			fmt.Fprintf(os.Stderr, "           Please start Docker Desktop or Docker daemon and try again.\n")
