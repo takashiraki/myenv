@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"myenv/internal/config"
+	"myenv/internal/config/application"
 	"myenv/internal/infrastructure"
 	"myenv/internal/utils"
 	"os"
@@ -172,7 +173,29 @@ func createProject(p *PHPService) {
 		"type": "new",
 	}
 
-	createConfigFile(containerName, containerProxy, path, lang, fw, options)
+	modules := []string{"proxy"}
+
+	project := application.Project{
+		ContainerName: containerName,
+		ContainerProxy: containerProxy,
+		Path: path,
+		Lang: lang,
+		Fw: fw,
+		Options: options,
+		Modules: modules,
+	}
+
+	projectService, err := application.NewConfigService()
+	
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
+	}
+
+	if err := projectService.AddProject(project); err != nil {
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
+	}
 
 	targetRepo := "https://github.com/takashiraki/docker_php.git"
 
@@ -1012,14 +1035,29 @@ func cloneProject(p *PHPService) {
 		"repo": gitRepo,
 	}
 
-	createConfigFile(
-		containerName,
-		containerProxy,
-		path,
-		lang,
-		fw,
-		options,
-	)
+	modules := []string{"proxy"}
+
+	project := application.Project{
+		ContainerName: containerName,
+		ContainerProxy: containerProxy,
+		Path: path,
+		Lang: lang,
+		Fw: fw,
+		Options: options,
+		Modules: modules,
+	}
+
+	projectService, err := application.NewConfigService()
+	
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
+	}
+
+	if err := projectService.AddProject(project); err != nil {
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
+	}
 
 	targetRepo := "https://github.com/takashiraki/docker_php.git"
 
