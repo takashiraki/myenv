@@ -3,6 +3,7 @@ package modules
 import (
 	"fmt"
 	"myenv/internal/config"
+	"myenv/internal/config/application"
 	"myenv/internal/infrastructure"
 	"myenv/internal/utils"
 	"os"
@@ -12,15 +13,18 @@ import (
 type ProxyService struct {
 	container infrastructure.ContainerInterface
 	repository infrastructure.RepositoryInterface
+	config_service application.ConfigService
 }
 
 func NewProxyService(
 	container infrastructure.ContainerInterface,
 	repository infrastructure.RepositoryInterface,
+	config_service application.ConfigService,
 ) *ProxyService {
 	return &ProxyService{
 		container: container,
 		repository: repository,
+		config_service: config_service,
 	}
 }
 
@@ -34,7 +38,12 @@ type Module struct {
 }
 
 func (p *ProxyService) CreateProxy(module Module) error {
-	if err := config.AddModuleConfig(module.Module.Name, module.Module.Path); err != nil {
+	moduleConfig := application.Module{
+		Name: module.Module.Name,
+		Path: module.Module.Path,
+	}
+	
+	if err := p.config_service.AddModule(moduleConfig); err != nil {
 		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
 		return err
 	}

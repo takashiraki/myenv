@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"errors"
+	"myenv/internal/config/application"
 	"net/url"
 	"os"
 	"path"
@@ -23,14 +24,20 @@ func ValidateProjectName(val any) error {
 		return errors.New("invalid type: project name must be a string or integer")
 	}
 
-	usedProjects, err := getUsedProject()
+	configService, err := application.NewConfigService()
+
+	if err != nil {
+		return err
+	}
+
+	usedProjects, err := configService.GetProjects()
 
 	if err != nil {
 		return err
 	}
 
 	for _, usedProject := range usedProjects {
-		if name == usedProject {
+		if name == usedProject.ContainerName {
 			return errors.New("project name is already in use")
 		}
 	}
@@ -90,14 +97,20 @@ func ValidateProxy(val any) error {
 		return errors.New("invalid proxy format")
 	}
 
-	usedProxies, err := getUsedProxy()
+	configService, err := application.NewConfigService()
 
 	if err != nil {
 		return err
 	}
 
-	for _, usedusedProxy := range usedProxies {
-		if proxy == usedusedProxy {
+	projects, err := configService.GetProjects()
+
+	if err != nil {
+		return err
+	}
+
+	for _, project := range projects {
+		if proxy == project.ContainerProxy {
 			return errors.New("proxy is already in use")
 		}
 	}
@@ -144,43 +157,7 @@ func ValidatePort(val any) error {
 	return nil
 }
 
-func getUsedProxy() ([]string, error) {
-	homeDir, err := os.UserHomeDir()
 
-	if err != nil {
-		return nil, errors.New("error getting home directory")
-	}
-
-	targetPath := filepath.Join(homeDir, ".config", "myenv", "config.json")
-
-	if os.Stat(targetPath); os.IsNotExist(err) {
-		return nil, errors.New("config file does not exist")
-	}
-
-	data, err := os.ReadFile(targetPath)
-
-	if err != nil {
-		return nil, errors.New("error reading config file")
-	}
-
-	var config struct {
-		Projects map[string]struct {
-			ContainerProxy string `json:"container_proxy"`
-		} `json:"projects"`
-	}
-
-	if err := json.Unmarshal(data, &config); err != nil {
-		return nil, errors.New("error parsing config file")
-	}
-
-	var usedProxys []string
-
-	for _, project := range config.Projects {
-		usedProxys = append(usedProxys, project.ContainerProxy)
-	}
-
-	return usedProxys, nil
-}
 
 func getUsedPort() ([]int, error) {
 	homeDir, err := os.UserHomeDir()
@@ -301,14 +278,20 @@ func ValidateGitRepoProjectExists(val any) error {
 		return errors.New("project with the same name already exists")
 	}
 
-	usedProjects, err := getUsedProject()
+	configService, err := application.NewConfigService()
+	
+	if err != nil {
+		return err
+	}
+
+	projects, err := configService.GetProjects()
 
 	if err != nil {
 		return err
 	}
 
-	for _, usedProject := range usedProjects {
-		if repoName == usedProject {
+	for _, project := range projects {
+		if repoName == project.ContainerName {
 			return errors.New("project name is already in use")
 		}
 	}

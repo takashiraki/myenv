@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"myenv/internal/config"
+	"myenv/internal/config/application"
 	"myenv/internal/infrastructure"
 	"myenv/internal/utils"
 	"os"
@@ -18,14 +19,17 @@ import (
 type PHPService struct {
 	container            infrastructure.ContainerInterface
 	repository_interface infrastructure.RepositoryInterface
+	config_service application.ConfigService
 }
 
 func newPHPService(
 	container infrastructure.ContainerInterface,
-	repository infrastructure.RepositoryInterface) *PHPService {
+	repository infrastructure.RepositoryInterface,
+	config_service application.ConfigService) *PHPService {
 	return &PHPService{
 		container:            container,
 		repository_interface: repository,
+		config_service: config_service,
 	}
 }
 
@@ -44,7 +48,6 @@ type PHPProject struct {
 
 func PHP() {
 	utils.ClearTerminal()
-	fmt.Println("PHP called")
 
 	clonePrompt := &survey.Select{
 		Message: "Do you want to clone repository of PHP project?",
@@ -59,7 +62,11 @@ func PHP() {
 
 	containerRepo := infrastructure.NewDockerContainer()
 	gitRepo := infrastructure.NewGitRepository()
-	newPHPService := newPHPService(containerRepo, gitRepo)
+	configService, err := application.NewConfigService()
+	if err != nil {
+		log.Fatal(err)
+	}
+	newPHPService := newPHPService(containerRepo, gitRepo, *configService)
 
 	switch clone {
 	case "Yes":
@@ -79,7 +86,7 @@ func createProject(p *PHPService) {
 		switch {
 		case strings.Contains(errMsg, "proxy_network does not exist"):
 			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m The proxy network has not been set up yet.\n")
-			fmt.Fprintf(os.Stderr, "           Please run the proxy module setup first to create the proxy network.\n")
+			fmt.Fprintf(os.Stderr, "           Please run: \033[36mmyenv add -m Proxy\033[0m\n")
 		case strings.Contains(errMsg, "Cannot connect to the Docker daemon"):
 			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker daemon is not running.\n")
 			fmt.Fprintf(os.Stderr, "           Please start Docker Desktop or Docker daemon and try again.\n")
@@ -172,7 +179,22 @@ func createProject(p *PHPService) {
 		"type": "new",
 	}
 
-	createConfigFile(containerName, containerProxy, path, lang, fw, options)
+	modules := []string{"proxy"}
+
+	project := application.Project{
+		ContainerName: containerName,
+		ContainerProxy: containerProxy,
+		Path: path,
+		Lang: lang,
+		Fw: fw,
+		Options: options,
+		Modules: modules,
+	}
+
+	if err := p.config_service.AddProject(project); err != nil {
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
+	}
 
 	targetRepo := "https://github.com/takashiraki/docker_php.git"
 
@@ -901,14 +923,6 @@ func createProject(p *PHPService) {
 	}
 }
 
-func createConfigFile(containerName string, containerProxy string, path string, lang string, fw string, options map[string]string) {
-	err := config.AddProjectConfig(containerName, containerProxy, path, lang, fw, options)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 func cloneProject(p *PHPService) {
 	gitRepo := ""
 	gitRepoPrompt := &survey.Input{
@@ -922,7 +936,7 @@ func cloneProject(p *PHPService) {
 		switch {
 		case strings.Contains(errMsg, "proxy_network does not exist"):
 			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m The proxy network has not been set up yet.\n")
-			fmt.Fprintf(os.Stderr, "           Please run the proxy module setup first to create the proxy network.\n")
+			fmt.Fprintf(os.Stderr, "           Please run: \033[36mmyenv add -m Proxy\033[0m\n")
 		case strings.Contains(errMsg, "Cannot connect to the Docker daemon"):
 			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker daemon is not running.\n")
 			fmt.Fprintf(os.Stderr, "           Please start Docker Desktop or Docker daemon and try again.\n")
@@ -1012,14 +1026,22 @@ func cloneProject(p *PHPService) {
 		"repo": gitRepo,
 	}
 
-	createConfigFile(
-		containerName,
-		containerProxy,
-		path,
-		lang,
-		fw,
-		options,
-	)
+	modules := []string{"proxy"}
+
+	project := application.Project{
+		ContainerName: containerName,
+		ContainerProxy: containerProxy,
+		Path: path,
+		Lang: lang,
+		Fw: fw,
+		Options: options,
+		Modules: modules,
+	}
+
+	if err := p.config_service.AddProject(project); err != nil {
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
+	}
 
 	targetRepo := "https://github.com/takashiraki/docker_php.git"
 

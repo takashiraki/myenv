@@ -4,14 +4,12 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"myenv/internal/config"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 )
 
-var version = "v0.3.2"
+var version = "v0.3.3"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -20,7 +18,6 @@ var rootCmd = &cobra.Command{
 	Short:   "A CLI tool for managing containerized development environments",
 	Long: `myenv ` + version,
 	Run: func(cmd *cobra.Command, args []string) {
-		config.GetConfig(strings.TrimPrefix(version, "v"))
 		cmd.Help()
 		// fmt.Println(cmd.Long)
 	},
