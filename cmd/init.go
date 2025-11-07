@@ -24,21 +24,27 @@ var (
 // initCmd represents the init command
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Initialize a new containerized development environment",
+	Long: `Initialize a new containerized development environment with your chosen language and framework.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+This command guides you through setting up a development environment by:
+  - Selecting a programming language (e.g., PHP)
+  - Choosing a framework or starting with a basic setup
+  - Creating the necessary Docker configuration and project files
+
+Example:
+  myenv init                      # Interactive mode with prompts
+  myenv init -l PHP               # Specify language directly
+  myenv init -l PHP -f Laravel    # Specify both language and framework`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := config.CheckConfig(); err != nil {
 			fmt.Println("\n\033[31m✗ Error:\033[0m Configuration Missing")
 			fmt.Println("\nNo configuration found. Please run the following command first to initialize myenv:")
-			fmt.Println("\n  myenv")
+			fmt.Println("\n  myenv setup")
 			fmt.Println("\nThis will create the necessary configuration files in ~/.config/myenv/")
 			return
 		}
+		
 		utils.ClearTerminal()
 		
 		config.CheckForUpdates(version)
