@@ -4,9 +4,14 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
+	"myenv/internal/config/interfaces"
+	"myenv/internal/utils"
 
 	"github.com/spf13/cobra"
+)
+
+var (
+	quick bool
 )
 
 // setupCmd represents the setup command
@@ -20,7 +25,8 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("setup called")
+		utils.ClearTerminal()
+		interfaces.SetUp()
 	},
 }
 
@@ -36,4 +42,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// setupCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	setupCmd.Flags().BoolVar(&quick, "quick", false, "Quick setup")
 }

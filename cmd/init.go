@@ -40,10 +40,11 @@ Example:
 		if err := config.CheckConfig(); err != nil {
 			fmt.Println("\n\033[31m✗ Error:\033[0m Configuration Missing")
 			fmt.Println("\nNo configuration found. Please run the following command first to initialize myenv:")
-			fmt.Println("\n  myenv")
+			fmt.Println("\n  myenv setup")
 			fmt.Println("\nThis will create the necessary configuration files in ~/.config/myenv/")
 			return
 		}
+		
 		utils.ClearTerminal()
 		
 		config.CheckForUpdates(version)

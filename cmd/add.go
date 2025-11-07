@@ -4,6 +4,7 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
 	"myenv/internal/config"
 	"myenv/internal/interfaces/cli"
 	"myenv/internal/utils"
@@ -26,6 +27,13 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if err := config.CheckConfig(); err != nil {
+			fmt.Println("\n\033[31m✗ Error:\033[0m Configuration Missing")
+			fmt.Println("\nNo configuration found. Please run the following command first to initialize myenv:")
+			fmt.Println("\n  myenv setup")
+			fmt.Println("\nThis will create the necessary configuration files in ~/.config/myenv/")
+			return
+		}
 		utils.ClearTerminal()
 		config.CheckForUpdates(version)
 		cli.EntryPoint(module)
