@@ -4,15 +4,16 @@ A CLI tool for rapidly creating and managing containerized development environme
 
 ## Overview
 
-MyEnv streamlines the process of setting up development environments by automating Docker container creation, port management, and project configuration. Currently supports PHP projects.
+MyEnv streamlines the process of setting up development environments by automating Docker container creation, proxy network configuration, and project setup. Currently supports PHP projects.
 
 ## Features
 
 - **Interactive Setup** - Guided project creation with language and framework selection
 - **Automated Container Management** - Docker Compose integration with health checks
-- **Port Conflict Prevention** - Smart port allocation and validation
+- **Proxy Network Management** - Automatic proxy server configuration with localhost subdomains (e.g., `project.localhost`)
 - **VS Code Integration** - Automatic project opening in development container
 - **Project Templates** - Pre-configured development stacks
+- **Modular Architecture** - Add additional services and modules to existing projects
 
 ## Installation
 
@@ -22,33 +23,58 @@ brew install takashiraki/tap/myenv
 
 ## Usage
 
+### Initial Setup
+
+Before creating your first project, run the setup command:
+
+```bash
+myenv setup
+```
+
+This creates the necessary configuration files in `~/.config/myenv/`.
+
 ### Create a New Project
 
 ```bash
 myenv init
 ```
 
-You can also specify the language using flags:
+You can also specify the language and framework using flags:
 
 ```bash
-myenv init --lang PHP
+myenv init -l PHP
+myenv init -l PHP -f Laravel
 ```
 
 This will:
 1. Prompt for language selection (if not specified)
-2. Ask for container name and port configuration
-3. Clone the appropriate Docker template
-4. Generate environment configuration files
-5. Build and start the containers
-6. Create a new project
-7. Optionally open the project in VS Code
+2. Prompt for framework selection (if not specified)
+3. Ask for container name and proxy domain configuration
+4. Clone the appropriate Docker template
+5. Generate environment configuration files
+6. Build and start the containers with proxy network
+7. Create a new project
+8. Optionally open the project in VS Code
+
+### Add Modules to Existing Projects
+
+Add additional modules or services to your existing development environment:
+
+```bash
+myenv add
+myenv add -m <module-name>
+```
 
 ### Available Commands
 
+- `myenv setup` - Initial setup (required before first use)
 - `myenv init` - Create a new development environment
 - `myenv init -l PHP` - Create a PHP project directly
+- `myenv init -l PHP -f Laravel` - Create a Laravel project directly
+- `myenv add` - Add modules to existing environment
+- `myenv add -m <module>` - Add specific module
 - `myenv --help` - Show available commands and options
-- `myenv --version` - Show version information
+- `myenv --version` or `myenv -v` - Show version information
 
 ## Requirements
 
