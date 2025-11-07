@@ -19,14 +19,17 @@ import (
 type PHPService struct {
 	container            infrastructure.ContainerInterface
 	repository_interface infrastructure.RepositoryInterface
+	config_service application.ConfigService
 }
 
 func newPHPService(
 	container infrastructure.ContainerInterface,
-	repository infrastructure.RepositoryInterface) *PHPService {
+	repository infrastructure.RepositoryInterface,
+	config_service application.ConfigService) *PHPService {
 	return &PHPService{
 		container:            container,
 		repository_interface: repository,
+		config_service: config_service,
 	}
 }
 
@@ -59,7 +62,11 @@ func PHP() {
 
 	containerRepo := infrastructure.NewDockerContainer()
 	gitRepo := infrastructure.NewGitRepository()
-	newPHPService := newPHPService(containerRepo, gitRepo)
+	configService, err := application.NewConfigService()
+	if err != nil {
+		log.Fatal(err)
+	}
+	newPHPService := newPHPService(containerRepo, gitRepo, *configService)
 
 	switch clone {
 	case "Yes":
@@ -184,14 +191,7 @@ func createProject(p *PHPService) {
 		Modules: modules,
 	}
 
-	projectService, err := application.NewConfigService()
-	
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
-		return
-	}
-
-	if err := projectService.AddProject(project); err != nil {
+	if err := p.config_service.AddProject(project); err != nil {
 		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
 		return
 	}
@@ -1038,14 +1038,7 @@ func cloneProject(p *PHPService) {
 		Modules: modules,
 	}
 
-	projectService, err := application.NewConfigService()
-	
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
-		return
-	}
-
-	if err := projectService.AddProject(project); err != nil {
+	if err := p.config_service.AddProject(project); err != nil {
 		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
 		return
 	}
