@@ -45,7 +45,6 @@ type PHPProject struct {
 
 func PHP() {
 	utils.ClearTerminal()
-	fmt.Println("PHP called")
 
 	clonePrompt := &survey.Select{
 		Message: "Do you want to clone repository of PHP project?",
@@ -921,14 +920,6 @@ func createProject(p *PHPService) {
 				return
 			}
 		}
-	}
-}
-
-func createConfigFile(containerName string, containerProxy string, path string, lang string, fw string, options map[string]string) {
-	err := config.AddProjectConfig(containerName, containerProxy, path, lang, fw, options)
-
-	if err != nil {
-		log.Fatal(err)
 	}
 }
 
