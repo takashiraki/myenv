@@ -191,3 +191,39 @@ func (s *ConfigService) AddProject(project Project) error {
 
 	return nil
 }
+
+func (s *ConfigService) AddModule(module Module) error {
+	config, err := s.GetConfig()
+
+	if err != nil {
+		return err
+	}
+
+	if _, exists := config.Modules[module.Name]; exists {
+		return errors.New("module already exists")
+	}
+
+	config.Modules[module.Name] = module
+
+	if err := s.SaveConfig(config); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *ConfigService) GetModule(name string) (Module, error) {
+	config, err := s.GetConfig()
+
+	if err != nil {
+		return Module{}, err
+	}
+
+	module, exists := config.Modules[name]
+
+	if !exists {
+		return Module{}, errors.New("module not found")
+	}
+
+	return module, nil
+}

@@ -6,7 +6,7 @@ package cmd
 import (
 	"fmt"
 	"myenv/internal/config"
-	"myenv/internal/interfaces/cli"
+	"myenv/internal/modules/interfaces/cli"
 	"myenv/internal/utils"
 
 	"github.com/spf13/cobra"
