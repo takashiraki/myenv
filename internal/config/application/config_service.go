@@ -12,7 +12,24 @@ type (
 	Config struct {
 		Lang             string
 		ContainerRuntime string
+		Projects         map[string]Project
+		Modules          map[string]Module
 	}
+
+	Project struct {
+		ContainerName string
+		ContainerProxy string
+		Path          string
+		Lang          string
+		Fw            string
+		Options       map[string]string
+		Modules       []string
+	}
+
+	Module struct {
+		Name string
+		Path string
+}
 
 	ConfigService struct {
 		path string
@@ -76,6 +93,8 @@ func (s *ConfigService) CreateConfig(
 	config := Config{
 		Lang: lang,
 		ContainerRuntime: containerRuntime,
+		Projects: make(map[string]Project),
+		Modules: make(map[string]Module),
 	};
 
 	data, err := json.MarshalIndent(config, "", "  ")
@@ -84,6 +103,89 @@ func (s *ConfigService) CreateConfig(
 		return  err
 	}
 	if err := os.WriteFile(s.path, data, 0644); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *ConfigService) GetProjects() ([]Project, error) {
+	config, err := s.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+	
+	var projects []Project
+
+	for _,project := range config.Projects {
+		projects = append(projects, project)
+	}
+
+	return projects, nil
+}
+
+func (s *ConfigService) GetProject(name string) (Project, error) {
+	if _, err := os.Stat(s.path); os.IsNotExist(err) {
+		errMsg := err.Error()
+
+		switch {
+			case strings.Contains(errMsg, "no such file or directory"):
+				return Project{}, errors.New("project file does not exist")
+		}
+	}
+
+	config, err := s.GetConfig()
+
+	if err != nil {
+		return Project{}, err
+	}
+
+	project, exists := config.Projects[name]
+
+	if !exists {
+		return Project{}, errors.New("project not found")
+	}
+
+	return project, nil
+}
+
+func (s *ConfigService) SaveConfig(config Config) error {
+	data, err := json.MarshalIndent(config, "", "  ")
+	
+	if err != nil {
+		return err
+	}
+
+	if err := os.WriteFile(s.path, data, 0644); err != nil {
+		return err
+	}
+	
+	return nil
+}
+
+func (s *ConfigService) AddProject(project Project) error {
+	if _, err := os.Stat(s.path); os.IsNotExist(err) {
+		errMsg := err.Error()
+
+		switch {
+			case strings.Contains(errMsg, "no such file or directory"):
+				return errors.New("project file does not exist")
+		}
+	}
+
+	config, err := s.GetConfig()
+	
+	if err != nil {
+		return err
+	}
+
+	if _, exists := config.Projects[project.ContainerName]; exists {
+		return errors.New("project already exists")
+	}
+	
+	config.Projects[project.ContainerName] = project
+
+	if err := s.SaveConfig(config); err != nil {
 		return err
 	}
 
