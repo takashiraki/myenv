@@ -109,6 +109,21 @@ func (s *ConfigService) CreateConfig(
 	return nil
 }
 
+func (s *ConfigService) GetProjects() ([]Project, error) {
+	config, err := s.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+	
+	var projects []Project
+
+	for _,project := range config.Projects {
+		projects = append(projects, project)
+	}
+
+	return projects, nil
+}
+
 func (s *ConfigService) GetProject(name string) (Project, error) {
 	if _, err := os.Stat(s.path); os.IsNotExist(err) {
 		errMsg := err.Error()
