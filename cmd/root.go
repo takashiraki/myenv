@@ -9,14 +9,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "v0.3.3"
+var version = "v0.4.0"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:     "myenv",
 	Version: version,
 	Short:   "A CLI tool for managing containerized development environments",
-	Long: `myenv ` + version,
+	Long:    `myenv ` + version,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 		// fmt.Println(cmd.Long)
