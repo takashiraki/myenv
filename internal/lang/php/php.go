@@ -62,7 +62,7 @@ func PHP() {
 
 	containerRepo := infrastructure.NewDockerContainer()
 	gitRepo := infrastructure.NewGitRepository()
-	configService, err := application.NewConfigService()
+	configService, err := application.NewConfigService(containerRepo)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,6 +87,30 @@ func createProject(p *PHPService) {
 		case strings.Contains(errMsg, "proxy_network does not exist"):
 			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m The proxy network has not been set up yet.\n")
 			fmt.Fprintf(os.Stderr, "           Please run: \033[36mmyenv add -m Proxy\033[0m\n")
+		case strings.Contains(errMsg, "Cannot connect to the Docker daemon"):
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker daemon is not running.\n")
+			fmt.Fprintf(os.Stderr, "           Please start Docker Desktop or Docker daemon and try again.\n")
+		case strings.Contains(errMsg, "command not found"):
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker is not installed on your system.\n")
+			fmt.Fprintf(os.Stderr, "           Please install Docker from https://docs.docker.com/get-docker/ and try again.\n")
+		case strings.Contains(errMsg, "permission denied"):
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m You don't have permission to access Docker.\n")
+			fmt.Fprintf(os.Stderr, "           Please add your user to the docker group or run with appropriate permissions.\n")
+		default:
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Please check your Docker setup and try again.\n")
+		}
+
+		return
+	}
+
+	if err := p.container.ChechInfraNetworkExists(); err != nil {
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
+
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "infra_network does not exist"):
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m The infra network has not been set up yet.\n")
+			fmt.Fprintf(os.Stderr, "           Please run: \033[36mmyenv setup\033[0m\n")
 		case strings.Contains(errMsg, "Cannot connect to the Docker daemon"):
 			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker daemon is not running.\n")
 			fmt.Fprintf(os.Stderr, "           Please start Docker Desktop or Docker daemon and try again.\n")
@@ -937,6 +961,30 @@ func cloneProject(p *PHPService) {
 		case strings.Contains(errMsg, "proxy_network does not exist"):
 			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m The proxy network has not been set up yet.\n")
 			fmt.Fprintf(os.Stderr, "           Please run: \033[36mmyenv add -m Proxy\033[0m\n")
+		case strings.Contains(errMsg, "Cannot connect to the Docker daemon"):
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker daemon is not running.\n")
+			fmt.Fprintf(os.Stderr, "           Please start Docker Desktop or Docker daemon and try again.\n")
+		case strings.Contains(errMsg, "command not found"):
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker is not installed on your system.\n")
+			fmt.Fprintf(os.Stderr, "           Please install Docker from https://docs.docker.com/get-docker/ and try again.\n")
+		case strings.Contains(errMsg, "permission denied"):
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m You don't have permission to access Docker.\n")
+			fmt.Fprintf(os.Stderr, "           Please add your user to the docker group or run with appropriate permissions.\n")
+		default:
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Please check your Docker setup and try again.\n")
+		}
+
+		return
+	}
+
+	if err := p.container.ChechInfraNetworkExists(); err != nil {
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
+
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "infra_network does not exist"):
+			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m The infra network has not been set up yet.\n")
+			fmt.Fprintf(os.Stderr, "           Please run: \033[36mmyenv setup\033[0m\n")
 		case strings.Contains(errMsg, "Cannot connect to the Docker daemon"):
 			fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker daemon is not running.\n")
 			fmt.Fprintf(os.Stderr, "           Please start Docker Desktop or Docker daemon and try again.\n")
