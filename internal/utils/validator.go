@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"myenv/internal/config/application"
+	"myenv/internal/infrastructure"
 	"net/url"
 	"os"
 	"path"
@@ -24,7 +25,8 @@ func ValidateProjectName(val any) error {
 		return errors.New("invalid type: project name must be a string or integer")
 	}
 
-	configService, err := application.NewConfigService()
+	container := infrastructure.NewDockerContainer()
+	configService, err := application.NewConfigService(container)
 
 	if err != nil {
 		return err
@@ -97,7 +99,8 @@ func ValidateProxy(val any) error {
 		return errors.New("invalid proxy format")
 	}
 
-	configService, err := application.NewConfigService()
+	container := infrastructure.NewDockerContainer()
+	configService, err := application.NewConfigService(container)
 
 	if err != nil {
 		return err
@@ -278,7 +281,8 @@ func ValidateGitRepoProjectExists(val any) error {
 		return errors.New("project with the same name already exists")
 	}
 
-	configService, err := application.NewConfigService()
+	container := infrastructure.NewDockerContainer()
+	configService, err := application.NewConfigService(container)
 	
 	if err != nil {
 		return err
