@@ -1,4 +1,4 @@
-package wordpress
+package appliactions
 
 import (
 	"errors"
@@ -199,10 +199,11 @@ func (s *WordpressService) Create(
 
 	if err := s.container.ExecCommand(
 		"my_database",
-		fmt.Sprintf(
-			"mysql -uroot -prootpw -e 'CREATE DATABASE IF NOT EXISTS `%s`'",
-			dbName,
-		),
+		"mysql",
+		"-uroot",
+		"-prootpw",
+		"-e",
+		fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s`", dbName),
 	); err != nil {
 		eventChan <- events.Event{
 			Key:     "create_wordpress_database",
