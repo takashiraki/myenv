@@ -79,3 +79,18 @@ func (d *DockerContainer) CreateInfraNetwork() error {
 
 	return nil
 }
+
+func (d *DockerContainer) ExecCommand(
+	command string,
+	serviceName string,
+) error {
+	cmd := exec.Command("docker", "exec", serviceName, command)
+
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		return errors.New("Error running docker exec: " + err.Error() + ", output: " + string(output))
+	}
+
+	return nil
+}
