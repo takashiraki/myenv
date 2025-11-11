@@ -6,7 +6,7 @@ import (
 	"myenv/internal/config/application"
 	"myenv/internal/events"
 	"myenv/internal/infrastructure"
-	appliactions "myenv/internal/lang/php/wordpress/Appliactions"
+	"myenv/internal/lang/php/wordpress/appliactions"
 	"myenv/internal/utils"
 	"os"
 	"os/exec"
@@ -69,7 +69,7 @@ func EntryPoint() {
 		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m Directory %s already exists\n", targetDir)
 		return
 	}
-	
+
 	fmt.Printf("\n")
 	fmt.Printf("\033[33m📋 Configuration:\033[0m\n")
 	fmt.Printf("   • Container name : %s\n", containerName)
