@@ -81,10 +81,17 @@ func (d *DockerContainer) CreateInfraNetwork() error {
 }
 
 func (d *DockerContainer) ExecCommand(
-	command string,
 	serviceName string,
+	arguments ...string,
 ) error {
-	cmd := exec.Command("docker", "exec", serviceName, command)
+	cmdArgs := []string{
+		"exec",
+		serviceName,
+	}
+
+	cmdArgs = append(cmdArgs, arguments...)
+
+	cmd := exec.Command("docker", cmdArgs...)
 
 	output, err := cmd.CombinedOutput()
 

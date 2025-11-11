@@ -6,5 +6,5 @@ type ContainerInterface interface {
 	ChechInfraNetworkExists() error
 	CreateProxyNetwork() error
 	CreateInfraNetwork() error
-	ExecCommand(command string, serviceName string) error
+	ExecCommand(serviceName string, arguments ...string) error
 }
