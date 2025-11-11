@@ -117,7 +117,7 @@ func (s *MailpitService) Create(events chan<- Event) error {
 	mp_smtp_uauth_accept_any := 1
 	mp_smtp_auth_allow_insecure := 1
 	virtual_host := "mailpit.localhost"
-	virtual_port := 1025
+	virtual_port := 8025
 
 	updateContent := string(content)
 
