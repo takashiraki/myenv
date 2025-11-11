@@ -21,7 +21,7 @@ func EntryPoint(module string) {
 
 		modulePrompt := &survey.Select{
 			Message: "Select the module you want to add:",
-			Options: []string{"Proxy", "MySQL"},
+			Options: []string{"Proxy", "MySQL", "Mailpit"},
 		}
 
 		if err := survey.AskOne(modulePrompt, &selectModule); err != nil {
@@ -31,7 +31,7 @@ func EntryPoint(module string) {
 
 		module = selectModule
 	} else {
-		modules := []string{"Proxy", "MySQL"}
+		modules := []string{"Proxy", "MySQL", "Mailpit"}
 
 		if !slices.Contains(modules, module) {
 			fmt.Printf("\n\033[31m✗ Error:\033[0m Invalid module selected\n")
@@ -44,6 +44,8 @@ func EntryPoint(module string) {
 		addProxy()
 	case "MySQL":
 		AddMySQL()
+	case "Mailpit":
+		AddMailpit()
 	}
 }
 
@@ -204,6 +206,109 @@ func AddMySQL() {
 
 	fmt.Printf("\033[33m📋 Configuration:\033[0m\n")
 	fmt.Printf("   • Container Name : %s\n", "mysql")
+	fmt.Printf("   • Repository Path: %s\n", targetDir)
+}
+
+func AddMailpit() {
+	homeDir, err := os.UserHomeDir()
+
+	if err != nil {
+		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
+	}
+
+	targetDir := filepath.Join(homeDir, "dev", "docker_mailpit")
+
+	if _, err := os.Stat(targetDir);  err == nil {
+		fmt.Printf("\n\033[31m✗ Error:\033[0m Directory %s already exists\n", targetDir)
+		return
+	}
+
+	utils.ClearTerminal()
+
+	fmt.Printf("\n")
+	fmt.Printf("\033[33m📋 Configuration:\033[0m\n")
+	fmt.Printf("   • Module Name     : %s\n", "mailpit")
+	fmt.Printf("   • Target Directory : %s\n", targetDir)
+
+	var confirmResult bool
+	confirmPrompt := &survey.Confirm{
+		Message: "Is it okay to start building the environment with this configuration?",
+	}
+
+	if err := survey.AskOne(confirmPrompt, &confirmResult); err != nil {
+		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
+	}
+
+	if !confirmResult {
+		fmt.Printf("\n\033[33mSetup cancelled.\033[0m Returning to configuration...")
+		return
+	}
+
+	container := infrastructure.NewDockerContainer()
+	repository := infrastructure.NewGitRepository()
+	configService, err := application.NewConfigService(container)
+	if err != nil {
+		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
+	}
+
+	service := applications.NewMailpitService(container, repository, *configService)
+
+	events := make(chan applications.Event)
+
+	done := make(chan bool)
+	var loadingDone chan bool
+
+	stopLoading := func() {
+		if loadingDone != nil {
+			select {
+			case loadingDone <- true:
+			default:
+			}
+			loadingDone = nil
+		}
+	}
+
+	go func() {
+		for event := range events {
+			switch event.Status {
+			case "running":
+				stopLoading()
+				loadingDone = make(chan bool)
+				go utils.ShowLoadingIndicator(event.Message, loadingDone)
+			case "success":
+				stopLoading()
+				fmt.Printf("\r\033[K\033[32m✓\033[0m %s\n", event.Message)
+			case "error":
+				stopLoading()
+				fmt.Printf("\r\033[K\033[31m✗\033[0m %s\n", event.Message)
+			}
+		}
+
+		stopLoading()
+		done <- true
+	}()
+
+	if err := service.Create(events); err != nil {
+		close(events)
+		<-done
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
+
+		errMsg := err.Error()
+		showErrorHandling(errMsg)
+		return
+	}
+
+	close(events)
+	<-done
+
+	fmt.Printf("\n")
+	fmt.Printf("\033[32m✓ Setup Complete!\033[0m 🎉\n\n")
+
+	fmt.Printf("\033[33m📋 Configuration:\033[0m\n")
+	fmt.Printf("   • Container Name : %s\n", "mailpit")
 	fmt.Printf("   • Repository Path: %s\n", targetDir)
 }
 
