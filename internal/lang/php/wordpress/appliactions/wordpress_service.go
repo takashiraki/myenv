@@ -181,6 +181,82 @@ func (s *WordpressService) Create(
 	}
 
 	eventChan <- events.Event{
+		Key:     "create_devcontainer_settings",
+		Name:    "Create devcontainer settings",
+		Status:  "running",
+		Message: "Creating devcontainer settings...",
+	}
+
+	devContainerExamplePath := filepath.Join(targetPath, ".devcontainer", "devcontainer.json.example")
+
+	if _, err := os.Stat(devContainerExamplePath); os.IsNotExist(err) {
+		eventChan <- events.Event{
+			Key:     "create_devcontainer_settings",
+			Name:    "Create devcontainer settings",
+			Status:  "error",
+			Message: "devcontainer.json.example does not exist",
+		}
+		return err
+	}
+
+	devContainerPath := filepath.Join(targetPath, ".devcontainer", "devcontainer.json")
+
+	if err := utils.CopyFile(devContainerExamplePath, devContainerPath); err != nil {
+		eventChan <- events.Event{
+			Key:     "create_devcontainer_settings",
+			Name:    "Create devcontainer settings",
+			Status:  "error",
+			Message: "Failed to create devcontainer settings",
+		}
+		return err
+	}
+
+	devContainerContents, err := os.ReadFile(devContainerPath)
+
+	if err != nil {
+		eventChan <- events.Event{
+			Key:     "create_devcontainer_settings",
+			Name:    "Create devcontainer settings",
+			Status:  "error",
+			Message: "Failed to read devcontainer.json",
+		}
+		return err
+	}
+
+	updateDevContainerContents := string(devContainerContents)
+
+	replacements = map[string]any{
+		`"name": "my wordpress",`: fmt.Sprintf(`"name": "%s",`, containerName),
+	}
+
+	if err := utils.ReplaceAllValue(&updateDevContainerContents, replacements); err != nil {
+		eventChan <- events.Event{
+			Key:     "create_devcontainer_settings",
+			Name:    "Create devcontainer settings",
+			Status:  "error",
+			Message: "Failed to update devcontainer.json",
+		}
+		return err
+	}
+
+	if err := os.WriteFile(devContainerPath, []byte(updateDevContainerContents), 0644); err != nil {
+		eventChan <- events.Event{
+			Key:     "create_devcontainer_settings",
+			Name:    "Create devcontainer settings",
+			Status:  "error",
+			Message: "Failed to write devcontainer.json",
+		}
+		return err
+	}
+
+	eventChan <- events.Event{
+		Key:     "create_devcontainer_settings",
+		Name:    "Create devcontainer settings",
+		Status:  "success",
+		Message: "Devcontainer settings created successfully",
+	}
+
+	eventChan <- events.Event{
 		Key:     "create_wordpress_database",
 		Name:    "Create WordPress database",
 		Status:  "running",
