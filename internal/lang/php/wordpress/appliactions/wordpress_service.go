@@ -145,10 +145,20 @@ func (s *WordpressService) Create(
 		return err
 	}
 
+	dbName, err := sanitizeDatabaseName(containerName)
+	if err != nil {
+		eventChan <- events.Event{
+			Key:     "create_wordpress_database",
+			Name:    "Create WordPress database",
+			Status:  "error",
+			Message: "Failed to sanitize database name",
+		}
+	}
+
 	updateContent := string(content)
 
 	replacements := map[string]any{
-		"MY_WORDPRESS_DB=": fmt.Sprintf("MY_WORDPRESS_DB=%s", containerName),
+		"MY_WORDPRESS_DB=": fmt.Sprintf("MY_WORDPRESS_DB=%s", dbName),
 		"CONTAINER_NAME=":  fmt.Sprintf("CONTAINER_NAME=%s", containerName),
 		"VIRTUAL_HOST=":    fmt.Sprintf("VIRTUAL_HOST=%s", virtualHost),
 	}
@@ -261,16 +271,6 @@ func (s *WordpressService) Create(
 		Name:    "Create WordPress database",
 		Status:  "running",
 		Message: "Creating WordPress database...",
-	}
-
-	dbName, err := sanitizeDatabaseName(containerName)
-	if err != nil {
-		eventChan <- events.Event{
-			Key:     "create_wordpress_database",
-			Name:    "Create WordPress database",
-			Status:  "error",
-			Message: "Failed to sanitize database name",
-		}
 	}
 
 	if err := s.container.ExecCommand(
