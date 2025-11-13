@@ -115,7 +115,7 @@ func EntryPoint() {
 	stopLoading := func() {
 		if loadingDone != nil {
 			loadingDone <- true
-			fmt.Print("\r\033[K") // 行をクリア
+			fmt.Print("\r\033[K")
 			loadingDone = nil
 		}
 	}

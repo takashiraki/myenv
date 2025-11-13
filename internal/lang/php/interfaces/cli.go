@@ -1,56 +1,44 @@
 package interfaces
 
 import (
-	"fmt"
 	"log"
-	"myenv/internal/framework"
-	"myenv/internal/lang/php"
+	"myenv/internal/lang/php/none/interfaces/cli"
 	"myenv/internal/lang/php/wordpress/interfaces"
 
 	"github.com/AlecAivazis/survey/v2"
 )
 
-func EntryPoint(lang string, fw string) {
-	if lang == "" {
-			fmt.Println("Initializing your environment...")
-			var selectedLang string
+func EntryPoint(fw string) {
 
-			langPrompt := &survey.Select{
-				Message: "Select the language you want to use:",
-				Options: []string{"PHP"},
-			}
-
-			if err := survey.AskOne(langPrompt, &selectedLang); err != nil {
-				log.Fatal(err)
-			}
-
-			lang = selectedLang
+	if fw != "" {
+		adoptedFw := map[string]any{
+			"None": cli.EntryPoint,
+			"WordPress": interfaces.EntryPoint,
 		}
 
-		switch lang {
-		case "PHP":
-			if fw != "" {
-				framework.PHPFramework(fw)
-			} else {
-				fwPrompt := &survey.Select{
-					Message: "Select the framework you want to use: ",
-					Options: []string{"None", "WordPress"},
-				}
+		if _, ok := adoptedFw[fw]; ok {
+			adoptedFw[fw].(func())()
+		} else {
+			log.Fatal("Unsupported framework selected.")
+		}
 
-				if err := survey.AskOne(fwPrompt, &fw); err != nil {
-					log.Fatal(err)
-				}
+	} else {
+		fwPrompt := &survey.Select{
+			Message: "Select the framework you want to use: ",
+			Options: []string{"None", "WordPress"},
+		}
 
-				switch fw {
-				case "None":
-					php.PHP()
-				case "WordPress":
-					interfaces.EntryPoint()
-				default:
-					log.Fatal("Unsupported framework selected.")
-				}
-			}
+		if err := survey.AskOne(fwPrompt, &fw); err != nil {
+			log.Fatal(err)
+		}
+
+		switch fw {
+		case "None":
+			cli.EntryPoint()
+		case "WordPress":
+			interfaces.EntryPoint()
 		default:
-			log.Fatal("Unsupported language selected.")
+			log.Fatal("Unsupported framework selected.")
 		}
+	}
 }
