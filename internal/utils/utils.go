@@ -30,14 +30,6 @@ func ShowLoadingIndicator(message string, done chan bool) {
 	}
 }
 
-func checkDir(dir string) error {
-	if DirIsExists(dir) {
-		return fmt.Errorf("directory %s already exists", dir)
-	}
-
-	return nil
-}
-
 func CreateEnvFile(projectPath string) error {
 	envExampleFilePath := filepath.Join(projectPath, ".env.example")
 

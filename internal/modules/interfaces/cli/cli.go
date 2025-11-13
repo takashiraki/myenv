@@ -5,7 +5,6 @@ import (
 	"myenv/internal/config/application"
 	"myenv/internal/infrastructure"
 	"myenv/internal/modules"
-	"myenv/internal/modules/applications"
 	"myenv/internal/utils"
 	"os"
 	"path/filepath"
@@ -59,7 +58,7 @@ func addProxy() {
 
 	targetDir := filepath.Join(homeDir, "dev", "docker_proxy_network")
 
-	if utils.DirIsExists(targetDir) {
+	if _,err := os.Stat(targetDir); !os.IsNotExist(err) {
 		fmt.Printf("\n\033[31m✗ Error:\033[0m Directory %s already exists\n", targetDir)
 		return
 	}
@@ -118,7 +117,7 @@ func AddMySQL() {
 
 	targetDir := filepath.Join(homeDir, "dev", "docker_mysql")
 
-	if utils.DirIsExists(targetDir) {
+	if _,err := os.Stat(targetDir); !os.IsNotExist(err) {
 		fmt.Printf("\n\033[31m✗ Error:\033[0m Directory %s already exists\n", targetDir)
 		return
 	}
