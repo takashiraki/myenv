@@ -316,6 +316,35 @@ func (s *ConfigService) AddModule(module Module) error {
 	return nil
 }
 
+func (s *ConfigService) UpProject(name string) (Project, error) {
+
+	project, err := s.GetProject(name)
+
+	if err != nil {
+		return Project{}, err
+	}
+
+	modules := project.Modules
+	
+	for _, module := range modules {
+		targetModulem, err := s.GetModule(module)
+
+		if err != nil {
+			return Project{}, err
+		}
+
+		if err := s.container.CreateContainer(targetModulem.Path); err != nil {
+			return Project{}, err
+		}
+	}
+
+	if err := s.container.CreateContainer(project.Path); err != nil {
+		return Project{}, err
+	}
+	
+	return project, nil
+} 
+
 func (s *ConfigService) GetModule(name string) (Module, error) {
 	config, err := s.GetConfig()
 
