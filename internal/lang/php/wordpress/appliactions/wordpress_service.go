@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type (
@@ -69,6 +70,12 @@ func (s *WordpressService) Create(
 		return errors.New("directory already exists")
 	}
 
+	modules := []string{
+		"proxy",
+		"mysql",
+		"mailpit",
+	}
+
 	moduleConfig := application.Project{
 		ContainerName:  containerName,
 		ContainerProxy: virtualHost,
@@ -78,11 +85,7 @@ func (s *WordpressService) Create(
 		Options: map[string]string{
 			"type": "new",
 		},
-		Modules: []string{
-			"proxy",
-			"mysql",
-			"mailpit",
-		},
+		Modules: modules,
 	}
 
 	if err := s.config_service.AddProject(moduleConfig); err != nil {
@@ -267,10 +270,70 @@ func (s *WordpressService) Create(
 	}
 
 	eventChan <- events.Event{
+		Key:     "Resolve dependencied container booting",
+		Name:    "resolve_devcontainer_settings",
+		Status:  "running",
+		Message: "Resolving dependencied container booting...",
+	}
+
+	for _, module := range modules {
+		moduleObject, err := s.config_service.GetModule(module)
+
+		if err != nil {
+			eventChan <- events.Event{
+				Key:     "resolve_devcontainer_settings",
+				Name:    "resolve_devcontainer_settings",
+				Status:  "error",
+				Message: fmt.Sprintf("Failed to get module: %s", module),
+			}
+			return err
+		}
+
+		eventChan <- events.Event{
+			Key:     "resolve_devcontainer_settings",
+			Name:    "resolve_devcontainer_settings",
+			Status:  "running",
+			Message: fmt.Sprintf("Resolving %s module...", module),
+		}
+
+		if err := s.container.CreateContainer(moduleObject.Path); err != nil {
+			eventChan <- events.Event{
+				Key:     "resolve_devcontainer_settings",
+				Name:    "resolve_devcontainer_settings",
+				Status:  "error",
+				Message: fmt.Sprintf("Failed to create %s container", module),
+			}
+			return err
+		}
+	}
+
+	eventChan <- events.Event{
+		Key:     "resolve_devcontainer_settings",
+		Name:    "resolve_devcontainer_settings",
+		Status:  "success",
+		Message: "Resolved dependencied container booting successfully",
+	}
+
+	eventChan <- events.Event{
 		Key:     "create_wordpress_database",
 		Name:    "Create WordPress database",
 		Status:  "running",
 		Message: "Creating WordPress database...",
+	}
+
+	for i := 0; i < 15; i++ {
+		if err := s.container.ExecCommand(
+			"my_database",
+			"mysqladmin",
+			"ping",
+			"-h", "localhost",
+			"-uroot",
+			"-prootpw",
+		); err == nil {
+			break
+		}
+
+		time.Sleep(2 * time.Second)
 	}
 
 	if err := s.container.ExecCommand(
