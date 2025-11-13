@@ -5,14 +5,11 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
 	"myenv/internal/config"
-	"myenv/internal/framework"
-	"myenv/internal/lang/php"
+	"myenv/internal/lang/interfaces"
 	"myenv/internal/utils"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
 )
 
@@ -49,45 +46,7 @@ Example:
 		
 		config.CheckForUpdates(version)
 
-		if lang == "" {
-			fmt.Println("Initializing your environment...")
-			var selectedLang string
-
-			langPrompt := &survey.Select{
-				Message: "Select the language you want to use:",
-				Options: []string{"PHP"},
-			}
-
-			if err := survey.AskOne(langPrompt, &selectedLang); err != nil {
-				log.Fatal(err)
-			}
-
-			lang = selectedLang
-		}
-
-		switch lang {
-		case "PHP":
-			if fw != "" {
-				framework.PHPFramework(fw)
-			} else {
-				fwPrompt := &survey.Select{
-					Message: "Select the framework you want to use: ",
-					Options: []string{"None"},
-				}
-
-				if err := survey.AskOne(fwPrompt, &fw); err != nil {
-					log.Fatal(err)
-				}
-
-				if fw == "None" {
-					php.PHP()
-				} else {
-					framework.PHPFramework(fw)
-				}
-			}
-		default:
-			log.Fatal("Unsupported language selected.")
-		}
+		interfaces.EntryPoint(lang, fw)
 	},
 }
 
