@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"myenv/internal/config"
-	"myenv/internal/lang/php/interfaces"
+	"myenv/internal/lang/interfaces"
 	"myenv/internal/utils"
 
 	"github.com/spf13/cobra"
