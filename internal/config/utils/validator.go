@@ -64,8 +64,8 @@ func ValidateDirectory(val any) error {
 
 	targetDir := filepath.Join(homeDir, "dev", dir)
 
-	if err := checkDir(targetDir); err != nil {
-		return err
+	if _,err := os.Stat(targetDir); os.IsNotExist(err) {
+		return errors.New("directory does not exist: " + targetDir)
 	}
 
 	return nil

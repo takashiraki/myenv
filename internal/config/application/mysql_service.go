@@ -1,8 +1,7 @@
-package applications
+package application
 
 import (
 	"fmt"
-	"myenv/internal/config/application"
 	"myenv/internal/infrastructure"
 	"myenv/internal/utils"
 	"os"
@@ -13,21 +12,14 @@ type (
 	MySQLService struct {
 		container      infrastructure.ContainerInterface
 		repository     infrastructure.RepositoryInterface
-		config_service application.ConfigService
-	}
-
-	Event struct {
-		Key     string
-		Name    string
-		Status  string
-		Message string
+		config_service ConfigService
 	}
 )
 
 func NewMySQLService(
 	container infrastructure.ContainerInterface,
 	repository infrastructure.RepositoryInterface,
-	config_service application.ConfigService,
+	config_service ConfigService,
 ) *MySQLService {
 	return &MySQLService{
 		container:      container,
@@ -59,7 +51,7 @@ func (s *MySQLService) Create(events chan<- Event) error {
 
 	targetPath := filepath.Join(homeDir, "dev", "docker_mysql")
 
-	moduleConfig := application.Module{
+	moduleConfig := Module{
 		Name: "mysql",
 		Path: targetPath,
 	}
