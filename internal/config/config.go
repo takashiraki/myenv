@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"errors"
-	"myenv/internal/utils"
 	"os"
 	"path/filepath"
 )
@@ -39,7 +38,7 @@ func GetConfig(version string) {
 
 	targetPath := filepath.Join(homeDir, ".config", "myenv")
 
-	if !utils.DirIsExists(targetPath) {
+	if _,err := os.Stat(targetPath); os.IsNotExist(err) {
 		if err := os.Mkdir(targetPath, 0755); err != nil {
 			panic(err)
 		}
@@ -222,7 +221,7 @@ func SaveModuleConfig(config *ModuleConfig) error {
 
 	envFilePath := filepath.Join(homeDir, ".config", "myenv", "config.json")
 
-	if !utils.DirIsExists(envFilePath) {
+	if _,err := os.Stat(envFilePath); os.IsNotExist(err) {
 		return errors.New("config file does not exist")
 	}
 

@@ -144,7 +144,7 @@ func AddMySQL() {
 		return
 	}
 
-	events := make(chan applications.Event)
+	events := make(chan application.Event)
 	container := infrastructure.NewDockerContainer()
 	repository := infrastructure.NewGitRepository()
 	configService, err := application.NewConfigService(container)
@@ -152,7 +152,7 @@ func AddMySQL() {
 		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
 		return
 	}
-	service := applications.NewMySQLService(container, repository, *configService)
+	service := application.NewMySQLService(container, repository, *configService)
 
 	done := make(chan bool)
 	var loadingDone chan bool
@@ -253,9 +253,9 @@ func AddMailpit() {
 		return
 	}
 
-	service := applications.NewMailpitService(container, repository, *configService)
+	service := application.NewMailpitService(container, repository, *configService)
 
-	events := make(chan applications.Event)
+	events := make(chan application.Event)
 
 	done := make(chan bool)
 	var loadingDone chan bool
