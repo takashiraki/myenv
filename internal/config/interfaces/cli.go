@@ -6,6 +6,9 @@ import (
 	"myenv/internal/infrastructure"
 	"myenv/internal/utils"
 	"os"
+	"os/exec"
+
+	"github.com/AlecAivazis/survey/v2"
 )
 
 func SetUp() {
@@ -77,4 +80,131 @@ func SetUp() {
 	fmt.Printf("   • Language             : %s\n", lang)
 	fmt.Printf("   • Create Proxy Network : %s\n", "yes")
 	fmt.Printf("   • Create Infra Network : %s\n", "yes")
+}
+
+func UpProject() {
+	container := infrastructure.NewDockerContainer()
+	configService, err := application.NewConfigService(container)
+
+	if err != nil {
+		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
+	}
+
+	projects, err := configService.GetProjects()
+
+	if err != nil {
+		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
+	}
+
+	projectNames := []string{}
+	for _, project := range projects {
+		projectNames = append(projectNames, project.ContainerName)
+	}
+	
+	projectPromopt := &survey.Select{
+		Message: "Select the project you want to up: ",
+		Options: projectNames,
+	}
+
+	projectName := ""
+
+	if err = survey.AskOne(projectPromopt, &projectName); err != nil {
+		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
+	}
+
+	done := make(chan bool)
+	
+	go utils.ShowLoadingIndicator("Upping project", done)
+
+	project, err := configService.UpProject(projectName)
+
+	if err != nil {
+		done <- true
+		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
+	}
+
+	done <- true
+	fmt.Print("\r\033[K")
+
+	fmt.Printf("\n\033[32m✓ Project upped!\033[0m 🎉\n\n")
+
+	fmt.Printf("\033[33m📋 Configuration:\033[0m\n")
+	fmt.Printf("   • Container Name : %s\n", project.ContainerName)
+	fmt.Printf("   • Repository Path: %s\n", project.Path)
+	fmt.Printf("   • Proxy          : %s\n\n", project.ContainerProxy)
+
+	fmt.Printf("\033[36m🚀 Next steps:\033[0m\n")
+	fmt.Printf("   1. Open VS Code:\n")
+	fmt.Printf("      $ \033[36mcode %s\033[0m\n\n", project.Path)
+	fmt.Printf("   2. Access your application:\n")
+	fmt.Printf("      🌐 \033[36mhttp://%s\033[0m\n\n", project.ContainerProxy)
+	fmt.Printf("   3. Start coding in the devcontainer!\n\n")
+
+	codeCommand := exec.Command("code", "--version")
+	devcontainerCommand := exec.Command("devcontainer", "--version")
+	cursorCommand := exec.Command("cursor", "--version")
+
+	_, codeErr := codeCommand.CombinedOutput()
+	_, devcontainerErr := devcontainerCommand.CombinedOutput()
+	_, cursorErr := cursorCommand.CombinedOutput()
+
+	targetDir := project.Path
+
+	var options []string
+	var commands []string
+
+	if codeErr == nil {
+		options = append(options, "VS Code (code)")
+		commands = append(commands, "code")
+	}
+
+	if cursorErr == nil {
+		options = append(options, "Cursor (cursor)")
+		commands = append(commands, "cursor")
+	}
+
+	if devcontainerErr == nil {
+		options = append(options, "devcontainer CLI")
+		commands = append(commands, "devcontainer")
+	}
+
+	if len(options) > 0 {
+		options = append(options, "Skip (open manually later)")
+
+		var selectedOption string
+		openPrompt := &survey.Select{
+			Message: "How would you like to open this project?",
+			Options: options,
+		}
+
+		if err := survey.AskOne(openPrompt, &selectedOption); err != nil {
+			fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
+			return
+		}
+
+		if selectedOption != "Skip (open manually later)" {
+			for i, option := range options[:len(options)-1] {
+				if selectedOption == option {
+					var openCommand *exec.Cmd
+
+					if commands[i] == "devcontainer" {
+						openCommand = exec.Command("devcontainer", "open", targetDir)
+					} else {
+						openCommand = exec.Command(commands[i], targetDir)
+					}
+
+					if _, err := openCommand.CombinedOutput(); err != nil {
+						fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m Failed to open project: %v\n", err)
+					} else {
+						fmt.Printf("\n\033[32m✓\033[0m Project opened in %s\n", selectedOption)
+					}
+					break
+				}
+			}
+		}
+	}
 }
