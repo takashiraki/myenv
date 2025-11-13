@@ -154,7 +154,6 @@ func EntryPoint() {
 	close(events)
 	<-done
 
-	// ローディングアニメーションが完全に停止するまで少し待つ
 	fmt.Print("\r\033[K")
 
 	fmt.Printf("\n")
