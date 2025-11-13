@@ -6,7 +6,7 @@ import (
 	"myenv/internal/config/application"
 	"myenv/internal/events"
 	"myenv/internal/infrastructure"
-	"myenv/internal/lang/php/wordpress/appliactions"
+	"myenv/internal/lang/php/wordpress/applications"
 	"myenv/internal/utils"
 	"os"
 	"os/exec"
@@ -103,7 +103,7 @@ func EntryPoint() {
 		return
 	}
 
-	service := appliactions.NewWordpressService(
+	service := applications.NewWordpressService(
 		container,
 		repository,
 		*configService,

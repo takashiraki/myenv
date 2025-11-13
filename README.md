@@ -11,7 +11,7 @@ MyEnv streamlines the process of setting up development environments by automati
 - **Interactive Setup** - Guided project creation with language and framework selection
 - **Automated Container Management** - Docker Compose integration with health checks
 - **Proxy Network Management** - Automatic proxy server configuration with localhost subdomains (e.g., `project.localhost`)
-- **VS Code Integration** - Automatic project opening in development container
+- **Editor Integration** - Automatic project opening in development container (supports VS Code, Cursor, devcontainer CLI)
 - **Project Templates** - Pre-configured development stacks
 - **Modular Architecture** - Add additional services and modules to existing projects
 
@@ -47,6 +47,7 @@ myenv init -l PHP -f Laravel
 ```
 
 This will:
+
 1. Prompt for language selection (if not specified)
 2. Prompt for framework selection (if not specified)
 3. Ask for container name and proxy domain configuration
@@ -54,7 +55,7 @@ This will:
 5. Generate environment configuration files
 6. Build and start the containers with proxy network
 7. Create a new project
-8. Optionally open the project in VS Code
+8. Optionally open the project in your preferred editor (VS Code, Cursor, or devcontainer CLI)
 
 ### Add Modules to Existing Projects
 
@@ -65,14 +66,25 @@ myenv add
 myenv add -m <module-name>
 ```
 
+### Start an Existing Project
+
+Start up an existing project's containers:
+
+```bash
+myenv up
+```
+
+This command is useful when you want to restart a previously created project without recreating it.
+
 ### Available Commands
 
 - `myenv setup` - Initial setup (required before first use)
-- `myenv init` - Create a new development environment
+- `myenv init` - Create a new development environment (interactive)
 - `myenv init -l PHP` - Create a PHP project directly
 - `myenv init -l PHP -f Laravel` - Create a Laravel project directly
-- `myenv add` - Add modules to existing environment
-- `myenv add -m <module>` - Add specific module
+- `myenv up` - Start an existing project's containers
+- `myenv add` - Add modules to existing environment (interactive)
+- `myenv add -m <module>` - Add specific module directly
 - `myenv --help` - Show available commands and options
 - `myenv --version` or `myenv -v` - Show version information
 
