@@ -64,7 +64,7 @@ func ValidateDirectory(val any) error {
 
 	targetDir := filepath.Join(homeDir, "dev", dir)
 
-	if _,err := os.Stat(targetDir); os.IsNotExist(err) {
+	if _, err := os.Stat(targetDir); err == nil {
 		return errors.New("directory does not exist: " + targetDir)
 	}
 
@@ -173,7 +173,7 @@ func ValidateGitRepoProjectExists(val any) error {
 
 	container := infrastructure.NewDockerContainer()
 	configService, err := application.NewConfigService(container)
-	
+
 	if err != nil {
 		return err
 	}
