@@ -5,7 +5,6 @@ import (
 	"myenv/internal/config/application"
 	"myenv/internal/infrastructure"
 	"myenv/internal/modules"
-	"myenv/internal/modules/applications"
 	"myenv/internal/utils"
 	"os"
 	"path/filepath"
@@ -59,7 +58,7 @@ func addProxy() {
 
 	targetDir := filepath.Join(homeDir, "dev", "docker_proxy_network")
 
-	if utils.DirIsExists(targetDir) {
+	if _,err := os.Stat(targetDir); !os.IsNotExist(err) {
 		fmt.Printf("\n\033[31m✗ Error:\033[0m Directory %s already exists\n", targetDir)
 		return
 	}
@@ -88,7 +87,7 @@ func addProxy() {
 
 	container := infrastructure.NewDockerContainer()
 	repository := infrastructure.NewGitRepository()
-	configService, err := application.NewConfigService(container)
+	configService, err := application.NewConfigService(container, repository)
 	if err != nil {
 		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
 		return
@@ -118,7 +117,7 @@ func AddMySQL() {
 
 	targetDir := filepath.Join(homeDir, "dev", "docker_mysql")
 
-	if utils.DirIsExists(targetDir) {
+	if _,err := os.Stat(targetDir); !os.IsNotExist(err) {
 		fmt.Printf("\n\033[31m✗ Error:\033[0m Directory %s already exists\n", targetDir)
 		return
 	}
@@ -145,15 +144,15 @@ func AddMySQL() {
 		return
 	}
 
-	events := make(chan applications.Event)
+	events := make(chan application.Event)
 	container := infrastructure.NewDockerContainer()
 	repository := infrastructure.NewGitRepository()
-	configService, err := application.NewConfigService(container)
+	configService, err := application.NewConfigService(container, repository)
 	if err != nil {
 		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
 		return
 	}
-	service := applications.NewMySQLService(container, repository, *configService)
+	service := application.NewMySQLService(container, repository, *configService)
 
 	done := make(chan bool)
 	var loadingDone chan bool
@@ -248,15 +247,15 @@ func AddMailpit() {
 
 	container := infrastructure.NewDockerContainer()
 	repository := infrastructure.NewGitRepository()
-	configService, err := application.NewConfigService(container)
+	configService, err := application.NewConfigService(container, repository)
 	if err != nil {
 		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
 		return
 	}
 
-	service := applications.NewMailpitService(container, repository, *configService)
+	service := application.NewMailpitService(container, repository, *configService)
 
-	events := make(chan applications.Event)
+	events := make(chan application.Event)
 
 	done := make(chan bool)
 	var loadingDone chan bool

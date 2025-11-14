@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"myenv/internal/config"
 	"myenv/internal/config/application"
+	"myenv/internal/config/utils"
 	"myenv/internal/events"
 	"myenv/internal/infrastructure"
 	"myenv/internal/lang/php/wordpress/applications"
-	"myenv/internal/utils"
+	CommonUtils "myenv/internal/utils"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,7 +18,7 @@ import (
 )
 
 func EntryPoint() {
-	utils.ClearTerminal()
+	CommonUtils.ClearTerminal()
 
 	containerName := ""
 	containerNamePrompt := &survey.Input{
@@ -54,7 +55,7 @@ func EntryPoint() {
 		return
 	}
 
-	utils.ClearTerminal()
+	CommonUtils.ClearTerminal()
 
 	homeDir, err := os.UserHomeDir()
 
@@ -96,7 +97,7 @@ func EntryPoint() {
 	events := make(chan events.Event)
 	container := infrastructure.NewDockerContainer()
 	repository := infrastructure.NewGitRepository()
-	configService, err := application.NewConfigService(container)
+	configService, err := application.NewConfigService(container, repository)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
@@ -126,7 +127,7 @@ func EntryPoint() {
 			case "running":
 				stopLoading()
 				loadingDone = make(chan bool)
-				go utils.ShowLoadingIndicator(event.Message, loadingDone)
+				go CommonUtils.ShowLoadingIndicator(event.Message, loadingDone)
 			case "success":
 				stopLoading()
 				fmt.Printf("\r\033[K\033[32m✓\033[0m %s\n", event.Message)
@@ -283,7 +284,7 @@ func showErrorHandling(errMsg string) {
 func cleanUpFailedSetup(containerName string, path string) {
 	done := make(chan bool)
 
-	go utils.ShowLoadingIndicator("Cleaning up config", done)
+	go CommonUtils.ShowLoadingIndicator("Cleaning up config", done)
 	if err := config.DeleteProjectConfig(containerName); err != nil {
 		done <- true
 		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m Failed to remove project configuration: %v\n", err)
@@ -294,7 +295,7 @@ func cleanUpFailedSetup(containerName string, path string) {
 
 	done = make(chan bool)
 
-	go utils.ShowLoadingIndicator("Removing cloned repository", done)
+	go CommonUtils.ShowLoadingIndicator("Removing cloned repository", done)
 	if err := os.RemoveAll(path); err != nil {
 		done <- true
 		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m Failed to remove cloned repository: %v\n", err)

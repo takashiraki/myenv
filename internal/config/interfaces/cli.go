@@ -11,9 +11,10 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 )
 
-func SetUp() {
+func SetUp(quick bool) {
 	container := infrastructure.NewDockerContainer()
-	configService, err := application.NewConfigService(container)
+	repository := infrastructure.NewGitRepository()
+	configService, err := application.NewConfigService(container, repository)
 
 	if err != nil {
 		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
@@ -25,6 +26,30 @@ func SetUp() {
 		return
 	}
 
+	fmt.Printf("\n\033[36m🔧 Setup Mode:\033[0m %s\n", map[bool]string{true: "Quick Setup", false: "Standard Setup"}[quick])
+	if quick {
+		fmt.Printf("\033[33mℹ Info:\033[0m Quick setup will create basic configuration only.\n")
+		fmt.Printf("          Use 'myenv create' after setup to create project containers.\n\n")
+	} else {
+		fmt.Printf("\033[33mℹ Info:\033[0m Standard setup includes configuration and network creation.\n\n")
+	}
+
+	var confirm bool
+	confirmPrompt := &survey.Confirm{
+		Message: "Do you want to continue with this setup?",
+		Default: true,
+	}
+
+	if err := survey.AskOne(confirmPrompt, &confirm); err != nil {
+		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
+		return
+	}
+
+	if !confirm {
+		fmt.Printf("\n\033[33mℹ Info:\033[0m Setup cancelled.\n")
+		return
+	}
+
 	lang := "en"
 	containerRuntime := "docker"
 	events := make(chan application.Event)
@@ -33,11 +58,8 @@ func SetUp() {
 
 	stopLoading := func ()  {
 		if loadingDone != nil {
-			select {
-			case loadingDone <- true:
-			default:
-			}
-
+			 loadingDone <- true
+			fmt.Print("\r\033[K")
 			loadingDone = nil
 		}
 	}
@@ -61,7 +83,7 @@ func SetUp() {
 		done <- true
 	}()
 
-	if err := configService.CreateConfig(lang, containerRuntime, events); err != nil {
+	if err := configService.CreateConfig(lang, containerRuntime, events, quick); err != nil {
 		close(events)
 		<-done
 
@@ -84,7 +106,8 @@ func SetUp() {
 
 func UpProject() {
 	container := infrastructure.NewDockerContainer()
-	configService, err := application.NewConfigService(container)
+	repository := infrastructure.NewGitRepository()
+	configService, err := application.NewConfigService(container, repository)
 
 	if err != nil {
 		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
