@@ -71,7 +71,7 @@ func EntryPoint() {
 
 		container := infrastructure.NewDockerContainer()
 		repository := infrastructure.NewGitRepository()
-		configService, err := application.NewConfigService(container)
+		configService, err := application.NewConfigService(container, repository)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -240,7 +240,7 @@ func EntryPoint() {
 
 		container := infrastructure.NewDockerContainer()
 		repository := infrastructure.NewGitRepository()
-		configService, err := application.NewConfigService(container)
+		configService, err := application.NewConfigService(container, repository)
 		if err != nil {
 			log.Fatal(err)
 		}

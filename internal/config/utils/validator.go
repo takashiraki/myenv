@@ -25,7 +25,8 @@ func ValidateProjectName(val any) error {
 	}
 
 	container := infrastructure.NewDockerContainer()
-	configService, err := application.NewConfigService(container)
+	repository := infrastructure.NewGitRepository()
+	configService, err := application.NewConfigService(container, repository)
 
 	if err != nil {
 		return err
@@ -99,7 +100,8 @@ func ValidateProxy(val any) error {
 	}
 
 	container := infrastructure.NewDockerContainer()
-	configService, err := application.NewConfigService(container)
+	repository := infrastructure.NewGitRepository()
+	configService, err := application.NewConfigService(container, repository)
 
 	if err != nil {
 		return err
@@ -172,7 +174,8 @@ func ValidateGitRepoProjectExists(val any) error {
 	}
 
 	container := infrastructure.NewDockerContainer()
-	configService, err := application.NewConfigService(container)
+	repository := infrastructure.NewGitRepository()
+	configService, err := application.NewConfigService(container, repository)
 
 	if err != nil {
 		return err

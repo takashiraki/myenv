@@ -87,7 +87,7 @@ func addProxy() {
 
 	container := infrastructure.NewDockerContainer()
 	repository := infrastructure.NewGitRepository()
-	configService, err := application.NewConfigService(container)
+	configService, err := application.NewConfigService(container, repository)
 	if err != nil {
 		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
 		return
@@ -147,7 +147,7 @@ func AddMySQL() {
 	events := make(chan application.Event)
 	container := infrastructure.NewDockerContainer()
 	repository := infrastructure.NewGitRepository()
-	configService, err := application.NewConfigService(container)
+	configService, err := application.NewConfigService(container, repository)
 	if err != nil {
 		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
 		return
@@ -247,7 +247,7 @@ func AddMailpit() {
 
 	container := infrastructure.NewDockerContainer()
 	repository := infrastructure.NewGitRepository()
-	configService, err := application.NewConfigService(container)
+	configService, err := application.NewConfigService(container, repository)
 	if err != nil {
 		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
 		return
