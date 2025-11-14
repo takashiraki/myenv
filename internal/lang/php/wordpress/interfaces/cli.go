@@ -97,7 +97,7 @@ func EntryPoint() {
 	events := make(chan events.Event)
 	container := infrastructure.NewDockerContainer()
 	repository := infrastructure.NewGitRepository()
-	configService, err := application.NewConfigService(container)
+	configService, err := application.NewConfigService(container, repository)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
