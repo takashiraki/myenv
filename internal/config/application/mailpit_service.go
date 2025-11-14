@@ -1,8 +1,7 @@
-package applications
+package application
 
 import (
 	"fmt"
-	"myenv/internal/config/application"
 	"myenv/internal/infrastructure"
 	"myenv/internal/utils"
 	"os"
@@ -14,14 +13,14 @@ type (
 	MailpitService struct {
 		container infrastructure.ContainerInterface
 		repository infrastructure.RepositoryInterface
-		config_service application.ConfigService
+		config_service ConfigService
 	}
 )
 
 func NewMailpitService(
 	container infrastructure.ContainerInterface,
 	repository infrastructure.RepositoryInterface,
-	config_service application.ConfigService,
+	config_service ConfigService,
 ) *MailpitService {
 	return &MailpitService{
 		container: container,
@@ -53,7 +52,7 @@ func (s *MailpitService) Create(events chan<- Event) error {
 
 	targetPath := filepath.Join(homeDir, "dev", "docker_mailpit")
 
-	moduleConfig := application.Module{
+	moduleConfig := Module{
 		Name: "mailpit",
 		Path: targetPath,
 	}
