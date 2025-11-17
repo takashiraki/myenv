@@ -31,7 +31,15 @@ Before creating your first project, run the setup command:
 myenv setup
 ```
 
-This creates the necessary configuration files in `~/.config/myenv/`.
+This creates the necessary configuration files in `~/.config/myenv/` and sets up the required Docker networks.
+
+For a quicker setup that only creates configuration files (without network setup):
+
+```bash
+myenv setup --quick
+```
+
+Use quick setup when you want to configure MyEnv first and create networks later when running `myenv init`.
 
 ### Create a New Project
 
@@ -78,7 +86,8 @@ This command is useful when you want to restart a previously created project wit
 
 ### Available Commands
 
-- `myenv setup` - Initial setup (required before first use)
+- `myenv setup` - Initial setup with full configuration and network creation (required before first use)
+- `myenv setup --quick` - Quick setup with configuration only (networks created on first `myenv init`)
 - `myenv init` - Create a new development environment (interactive)
 - `myenv init -l PHP` - Create a PHP project directly
 - `myenv init -l PHP -f Laravel` - Create a Laravel project directly
