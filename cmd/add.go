@@ -19,13 +19,17 @@ var (
 // addCmd represents the add command
 var addCmd = &cobra.Command{
 	Use:   "add",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Add additional modules to your existing development environment",
+	Long: `Add additional modules and services to your existing containerized development environment.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+This command allows you to extend your environment by adding:
+  - Database systems (MySQL, PostgreSQL, etc.)
+  - Caching systems (Redis, Memcached, etc.)
+  - Message queues and other services
+
+Example:
+  myenv add                    # Interactive mode to select modules
+  myenv add -m redis           # Add a specific module directly`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := config.CheckConfig(); err != nil {
 			fmt.Println("\n\033[31m✗ Error:\033[0m Configuration Missing")
