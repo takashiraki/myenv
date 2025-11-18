@@ -7,6 +7,7 @@ import (
 	"myenv/internal/utils"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
 )
@@ -146,7 +147,9 @@ func UpProject() {
 
 	if err != nil {
 		done <- true
-		fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
+		fmt.Print("\r\033[K")
+		fmt.Fprintf(os.Stderr, "\n\033[31m✗ Error:\033[0m %v\n", err)
+		showErrorHandling(err.Error())
 		return
 	}
 
@@ -229,5 +232,53 @@ func UpProject() {
 				}
 			}
 		}
+	}
+}
+
+func showErrorHandling(errMsg string) {
+	switch {
+	case strings.Contains(errMsg, "project not found"):
+		fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Project not found in configuration.\n")
+		fmt.Fprintf(os.Stderr, "           Please create a project first using 'myenv init'.\n")
+	case strings.Contains(errMsg, "project file does not exist"):
+		fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Configuration file does not exist.\n")
+		fmt.Fprintf(os.Stderr, "           Please run 'myenv setup' first to initialize the configuration.\n")
+	case strings.Contains(errMsg, "module not found"):
+		fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Required module not found in configuration.\n")
+		fmt.Fprintf(os.Stderr, "           The project may reference a module that hasn't been added.\n")
+		fmt.Fprintf(os.Stderr, "           Please check your project configuration or add the missing module.\n")
+	case strings.Contains(errMsg, "Cannot connect to the Docker daemon") || strings.Contains(errMsg, "Is the docker daemon running"):
+		fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker daemon is not running.\n")
+		fmt.Fprintf(os.Stderr, "           Please start Docker and try again.\n")
+	case strings.Contains(errMsg, "docker: not found") || strings.Contains(errMsg, "executable file not found"):
+		fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker is not installed or not in PATH.\n")
+		fmt.Fprintf(os.Stderr, "           Please install Docker and try again.\n")
+	case strings.Contains(errMsg, "port is already allocated") || strings.Contains(errMsg, "address already in use"):
+		fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m The port is already in use.\n")
+		fmt.Fprintf(os.Stderr, "           Please stop the conflicting container or service and try again.\n")
+	case strings.Contains(errMsg, "no space left on device"):
+		fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Not enough disk space.\n")
+		fmt.Fprintf(os.Stderr, "           Please free up disk space and try again.\n")
+	case strings.Contains(errMsg, "timeout") || strings.Contains(errMsg, "deadline exceeded"):
+		fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Operation timed out.\n")
+		fmt.Fprintf(os.Stderr, "           Please check your network connection or try again later.\n")
+	case strings.Contains(errMsg, "permission denied"):
+		fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Permission denied.\n")
+		fmt.Fprintf(os.Stderr, "           Please check file/directory permissions or Docker socket permissions.\n")
+	case strings.Contains(errMsg, "container already running"):
+		fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Container is already running.\n")
+		fmt.Fprintf(os.Stderr, "           The containers may already be started.\n")
+	case strings.Contains(errMsg, "no such file or directory"):
+		fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Required file or directory not found.\n")
+		fmt.Fprintf(os.Stderr, "           Please check if the project path exists and contains docker-compose.yml.\n")
+	case strings.Contains(errMsg, "network") && strings.Contains(errMsg, "not found"):
+		fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker network not found.\n")
+		fmt.Fprintf(os.Stderr, "           Please run 'myenv setup' to create the required networks.\n")
+	case strings.Contains(errMsg, "Compose file") || strings.Contains(errMsg, "docker-compose"):
+		fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Docker Compose configuration error.\n")
+		fmt.Fprintf(os.Stderr, "           Please check your docker-compose.yml file for syntax errors.\n")
+	default:
+		fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Please check the error message above and try again.\n")
+		fmt.Fprintf(os.Stderr, "           If the problem persists, check Docker logs or project configuration.\n")
 	}
 }
