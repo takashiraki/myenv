@@ -4,6 +4,7 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"myenv/internal/config"
 	"myenv/internal/config/interfaces"
 	"myenv/internal/utils"
 
@@ -32,6 +33,7 @@ Example:
   myenv setup --quick          # Quick setup with default settings`,
 	Run: func(cmd *cobra.Command, args []string) {
 		utils.ClearTerminal()
+		config.CheckForUpdates(version)
 		interfaces.SetUp(quick)
 	},
 }
