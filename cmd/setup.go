@@ -4,6 +4,7 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"myenv/internal/config"
 	"myenv/internal/config/interfaces"
 	"myenv/internal/utils"
 
@@ -17,15 +18,22 @@ var (
 // setupCmd represents the setup command
 var setupCmd = &cobra.Command{
 	Use:   "setup",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Configure myenv settings and preferences",
+	Long: `Configure myenv settings and preferences for your development environment.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+This command sets up myenv configuration by:
+  - Creating configuration files in ~/.config/myenv/
+  - Setting up default preferences
+  - Configuring environment settings
+
+This command should be run once before using other myenv commands.
+
+Example:
+  myenv setup                  # Interactive setup with prompts
+  myenv setup --quick          # Quick setup with default settings`,
 	Run: func(cmd *cobra.Command, args []string) {
 		utils.ClearTerminal()
+		config.CheckForUpdates(version)
 		interfaces.SetUp(quick)
 	},
 }

@@ -4,6 +4,7 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"myenv/internal/config"
 	"myenv/internal/config/interfaces"
 	"myenv/internal/utils"
 
@@ -13,15 +14,17 @@ import (
 // upCmd represents the up command
 var upCmd = &cobra.Command{
 	Use:   "up",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Start up your development environment containers",
+	Long: `Start up and run your containerized development environment.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+This command starts all Docker containers for your project based on
+the configuration created with 'myenv init'.
+
+Example:
+  myenv up                     # Start all containers for your project`,
 	Run: func(cmd *cobra.Command, args []string) {
 		utils.ClearTerminal()
+		config.CheckForUpdates(version)
 		interfaces.UpProject()
 	},
 }

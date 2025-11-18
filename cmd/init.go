@@ -41,9 +41,9 @@ Example:
 			fmt.Println("\nThis will create the necessary configuration files in ~/.config/myenv/")
 			return
 		}
-		
+
 		utils.ClearTerminal()
-		
+
 		config.CheckForUpdates(version)
 
 		interfaces.EntryPoint(lang, fw)

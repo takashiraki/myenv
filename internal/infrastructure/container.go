@@ -2,6 +2,7 @@ package infrastructure
 
 type ContainerInterface interface {
 	CreateContainer(path string) error
+	BootContainer(path string) error
 	ChechProxyNetworkExists() error
 	ChechInfraNetworkExists() error
 	CreateProxyNetwork() error
