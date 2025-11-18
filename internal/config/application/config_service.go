@@ -13,25 +13,25 @@ import (
 
 type (
 	Config struct {
-		Lang             string
-		ContainerRuntime string
-		Projects         map[string]Project
-		Modules          map[string]Module
+		Lang             string             `json:"lang"`
+		ContainerRuntime string             `json:"containerRuntime"`
+		Projects         map[string]Project `json:"projects"`
+		Modules          map[string]Module  `json:"modules"`
 	}
 
 	Project struct {
-		ContainerName  string
-		ContainerProxy string
-		Path           string
-		Lang           string
-		Fw             string
-		Options        map[string]string
-		Modules        []string
+		ContainerName  string            `json:"container_name"`
+		ContainerProxy string            `json:"container_proxy"`
+		Path           string            `json:"path"`
+		Lang           string            `json:"lang"`
+		Fw             string            `json:"framework"`
+		Options        map[string]string `json:"options"`
+		Modules        []string          `json:"modules"`
 	}
 
 	Module struct {
-		Name string
-		Path string
+		Name string `json:"name"`
+		Path string `json:"path"`
 	}
 
 	Event struct {
