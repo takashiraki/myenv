@@ -24,6 +24,18 @@ func (d *DockerContainer) CreateContainer(path string) error {
 	return nil
 }
 
+func (d *DockerContainer) BootContainer(path string) error {
+	cmd := exec.Command("docker", "compose", "up", "-d")
+
+	cmd.Dir = path
+
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return errors.New("Error running docker compose up -d: " + err.Error() + ", output: " + string(output))
+	}
+
+	return nil
+}
+
 func (d *DockerContainer) ChechProxyNetworkExists() error {
 	cmd := exec.Command("docker", "network", "ls", "--filter", "name=my_proxy_network")
 
