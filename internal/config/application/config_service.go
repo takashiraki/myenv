@@ -634,12 +634,12 @@ func (s *ConfigService) UpProject(name string) (Project, error) {
 			return Project{}, err
 		}
 
-		if err := s.container.CreateContainer(targetModulem.Path); err != nil {
+		if err := s.container.BootContainer(targetModulem.Path); err != nil {
 			return Project{}, err
 		}
 	}
 
-	if err := s.container.CreateContainer(project.Path); err != nil {
+	if err := s.container.BootContainer(project.Path); err != nil {
 		return Project{}, err
 	}
 
