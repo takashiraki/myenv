@@ -22,7 +22,7 @@ func SetUp(quick bool) {
 		return
 	}
 
-	if _, err = configService.GetConfig();err == nil {
+	if _, err = configService.GetConfig(); err == nil {
 		fmt.Printf("\n\033[33mℹ Info:\033[0m Config file already exists\n")
 		return
 	}
@@ -57,14 +57,14 @@ func SetUp(quick bool) {
 	done := make(chan bool)
 	var loadingDone chan bool
 
-	stopLoading := func ()  {
+	stopLoading := func() {
 		if loadingDone != nil {
-			 loadingDone <- true
+			loadingDone <- true
 			fmt.Print("\r\033[K")
 			loadingDone = nil
 		}
 	}
-	go func ()  {
+	go func() {
 		for event := range events {
 			switch event.Status {
 			case "running":
@@ -126,7 +126,7 @@ func UpProject() {
 	for _, project := range projects {
 		projectNames = append(projectNames, project.ContainerName)
 	}
-	
+
 	projectPromopt := &survey.Select{
 		Message: "Select the project you want to up: ",
 		Options: projectNames,
@@ -140,7 +140,7 @@ func UpProject() {
 	}
 
 	done := make(chan bool)
-	
+
 	go utils.ShowLoadingIndicator("Upping project", done)
 
 	project, err := configService.UpProject(projectName)
