@@ -32,6 +32,8 @@ func EntryPoint() {
 		survey.WithValidator(survey.MaxLength(20)),
 		survey.WithValidator(utils.ValidateProjectName),
 		survey.WithValidator(utils.ValidateDirectory),
+		survey.WithValidator(utils.ValidateContainerExists),
+		survey.WithValidator(utils.ValidateDatabaseExists),
 	)
 
 	if err != nil {
