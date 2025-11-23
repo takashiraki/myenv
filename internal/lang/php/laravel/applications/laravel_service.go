@@ -238,7 +238,7 @@ func (s *LaravelService) Create(
 		return err
 	}
 
-	if err := s.container.ExecCommand(
+	if _, err := s.container.ExecCommand(
 		containerName,
 		"laravel",
 		"new",
@@ -294,7 +294,7 @@ func (s *LaravelService) Create(
 		return err
 	}
 
-	if err := s.container.ExecCommand(
+	if _, err := s.container.ExecCommand(
 		containerName,
 		"composer",
 		"install",

@@ -322,7 +322,7 @@ func (s *WordpressService) Create(
 	}
 
 	for i := 0; i < 15; i++ {
-		if err := s.container.ExecCommand(
+		if _, err := s.container.ExecCommand(
 			"my_database",
 			"mysqladmin",
 			"ping",
@@ -336,7 +336,7 @@ func (s *WordpressService) Create(
 		time.Sleep(2 * time.Second)
 	}
 
-	if err := s.container.ExecCommand(
+	if _, err := s.container.ExecCommand(
 		"my_database",
 		"mysql",
 		"-uroot",
