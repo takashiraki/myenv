@@ -156,7 +156,7 @@ func (s *LaravelService) Create(
 
 	replacements := map[string]any{
 		"CONTAINER_NAME=": fmt.Sprintf("CONTAINER_NAME=%s", containerName),
-		"REPOSITORY=":     fmt.Sprintf("REPOSITORY=src/%s", containerName),
+		"REPOSITORY=":     "REPOSITORY=src",
 		"DOCKER_PATH=":    "DOCKER_PATH=Infra/php",
 		"VIRTUAL_HOST=":   fmt.Sprintf("VIRTUAL_HOST=%s", virtualHost),
 		"TZ=":             fmt.Sprintf("TZ=%s", time.Now().Location().String()),
@@ -189,6 +189,131 @@ func (s *LaravelService) Create(
 		Name:    "Set Up Environment Variables",
 		Status:  "success",
 		Message: "Environment variables set up successfully",
+	}
+
+	eventChan <- events.Event{
+		Key:     "resolve_dependencies_container_booting",
+		Name:    "Resolve Dependencies & Container Booting",
+		Status:  "running",
+		Message: "Resolving dependencies and booting container...",
+	}
+
+	if err := langutils.ResolveDependenciesContainerBooting(
+		s.container,
+		modules,
+		s.config_service,
+	); err != nil {
+		eventChan <- events.Event{
+			Key:     "resolve_dependencies_container_booting",
+			Name:    "Resolve Dependencies & Container Booting",
+			Status:  "error",
+			Message: "Failed to resolve dependencies and boot container: " + err.Error(),
+		}
+
+		return err
+	}
+
+	eventChan <- events.Event{
+		Key:     "resolve_dependencies_container_booting",
+		Name:    "Resolve Dependencies & Container Booting",
+		Status:  "success",
+		Message: "Dependencies resolved and container booted successfully",
+	}
+
+	eventChan <- events.Event{
+		Key:     "start_laravel_container",
+		Name:    "Start Laravel Container",
+		Status:  "running",
+		Message: "Starting Laravel container...",
+	}
+
+	if err := s.container.CreateContainer(targetPath); err != nil {
+		eventChan <- events.Event{
+			Key:     "start_laravel_container",
+			Name:    "Start Laravel Container",
+			Status:  "error",
+			Message: "Failed to start Laravel container: " + err.Error(),
+		}
+
+		return err
+	}
+
+	if err := s.container.ExecCommand(
+		containerName,
+		"laravel",
+		"new",
+		containerName,
+		"--no-interaction",
+		"--phpunit",
+		"--database=sqlite",
+	); err != nil {
+		eventChan <- events.Event{
+			Key:     "start_laravel_container",
+			Name:    "Start Laravel Container",
+			Status:  "error",
+			Message: "Failed to create new Laravel application: " + err.Error(),
+		}
+
+		return err
+	}
+
+	replacements = map[string]any{
+		"REPOSITORY=src": fmt.Sprintf("REPOSITORY=src/%s", containerName),
+	}
+
+	if err := utils.ReplaceAllValue(&updateContent, replacements); err != nil {
+		eventChan <- events.Event{
+			Key:     "start_laravel_container",
+			Name:    "Start Laravel Container",
+			Status:  "error",
+			Message: "Failed to replace values in .env file: " + err.Error(),
+		}
+
+		return err
+	}
+
+	if err := os.WriteFile(envFilePath, []byte(updateContent), 0644); err != nil {
+		eventChan <- events.Event{
+			Key:     "start_laravel_container",
+			Name:    "Start Laravel Container",
+			Status:  "error",
+			Message: "Failed to write .env file: " + err.Error(),
+		}
+
+		return err
+	}
+
+	if err := s.container.CreateContainer(targetPath); err != nil {
+		eventChan <- events.Event{
+			Key:     "start_laravel_container",
+			Name:    "Start Laravel Container",
+			Status:  "error",
+			Message: "Failed to restart Laravel container: " + err.Error(),
+		}
+
+		return err
+	}
+
+	if err := s.container.ExecCommand(
+		containerName,
+		"composer",
+		"install",
+	); err != nil {
+		eventChan <- events.Event{
+			Key:     "start_laravel_container",
+			Name:    "Start Laravel Container",
+			Status:  "error",
+			Message: "Failed to create new Laravel application: " + err.Error(),
+		}
+
+		return err
+	}
+
+	eventChan <- events.Event{
+		Key:     "start_laravel_container",
+		Name:    "Start Laravel Container",
+		Status:  "success",
+		Message: "Laravel container started successfully",
 	}
 
 	eventChan <- events.Event{
@@ -270,60 +395,6 @@ func (s *LaravelService) Create(
 		Name:    "Create DevContainer Settings",
 		Status:  "success",
 		Message: "DevContainer settings created successfully",
-	}
-
-	eventChan <- events.Event{
-		Key:     "resolve_dependencies_container_booting",
-		Name:    "Resolve Dependencies & Container Booting",
-		Status:  "running",
-		Message: "Resolving dependencies and booting container...",
-	}
-
-	if err := langutils.ResolveDependenciesContainerBooting(
-		s.container,
-		modules,
-		s.config_service,
-	); err != nil {
-		eventChan <- events.Event{
-			Key:     "resolve_dependencies_container_booting",
-			Name:    "Resolve Dependencies & Container Booting",
-			Status:  "error",
-			Message: "Failed to resolve dependencies and boot container: " + err.Error(),
-		}
-
-		return err
-	}
-
-	eventChan <- events.Event{
-		Key:     "resolve_dependencies_container_booting",
-		Name:    "Resolve Dependencies & Container Booting",
-		Status:  "success",
-		Message: "Dependencies resolved and container booted successfully",
-	}
-
-	eventChan <- events.Event{
-		Key:     "start_laravel_container",
-		Name:    "Start Laravel Container",
-		Status:  "running",
-		Message: "Starting Laravel container...",
-	}
-
-	if err := s.container.CreateContainer(targetPath); err != nil {
-		eventChan <- events.Event{
-			Key:     "start_laravel_container",
-			Name:    "Start Laravel Container",
-			Status:  "error",
-			Message: "Failed to start Laravel container: " + err.Error(),
-		}
-
-		return err
-	}
-
-	eventChan <- events.Event{
-		Key:     "start_laravel_container",
-		Name:    "Start Laravel Container",
-		Status:  "success",
-		Message: "Laravel container started successfully",
 	}
 
 	eventChan <- events.Event{
