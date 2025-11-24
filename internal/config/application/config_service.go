@@ -214,14 +214,22 @@ func (s *ConfigService) CreateConfig(
 		}
 	}
 
-	if !quick {
-		return nil
-	}
-
 	homeDir, err := os.UserHomeDir()
 
 	if err != nil {
 		return err
+	}
+
+	devPath := filepath.Join(homeDir, "dev")
+
+	if _, err := os.Stat(devPath); os.IsNotExist(err) {
+		if err := os.MkdirAll(devPath, 0755); err != nil {
+			return err
+		}
+	}
+
+	if !quick {
+		return nil
 	}
 
 	proxyDir := filepath.Join(homeDir, "dev", "docker_proxy_network")
