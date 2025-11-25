@@ -195,7 +195,7 @@ func ValidateGitRepoProjectExists(val any) error {
 	}
 
 	if err := ValidateContainerExists(repoName); err != nil {
-		return errors.New("container with the same name already exists")
+		return err
 	}
 
 	return nil
