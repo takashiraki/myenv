@@ -242,48 +242,72 @@ func (s *ConfigService) CreateConfig(
 			Message: "Cloning proxy repository...",
 		}
 
-		proxyRepo := "https://github.com/takashiraki/docker_proxy_network.git"
+		output, err := s.container.ExecDockerCommand(
+			"ps",
+			"-a",
+			"--filter",
+			"name=nginx_proxy",
+		)
 
-		if err := s.repository.CloneRepo(proxyRepo, proxyDir); err != nil {
-			events <- Event{
-				Key:     "create_proxy_container",
-				Name:    "Create proxy container",
-				Status:  "error",
-				Message: "Failed to clone proxy repository",
+		if err != nil {
+			if strings.Contains(err.Error(), "Is the docker daemon running") {
+				return errors.New("docker daemon is not running. Please start Docker and try again.")
 			}
+
 			return err
 		}
 
-		if err := s.container.CreateContainer(proxyDir); err != nil {
+		if strings.Contains(output, "nginx_proxy") {
 			events <- Event{
 				Key:     "create_proxy_container",
 				Name:    "Create proxy container",
-				Status:  "error",
-				Message: "Failed to create proxy container",
+				Status:  "skipped",
+				Message: "Proxy container with the same name already exists",
 			}
-			return err
-		}
+		} else {
+			proxyRepo := "https://github.com/takashiraki/docker_proxy_network.git"
 
-		moduleConfig := Module{
-			Name: "proxy",
-			Path: proxyDir,
-		}
+			if err := s.repository.CloneRepo(proxyRepo, proxyDir); err != nil {
+				events <- Event{
+					Key:     "create_proxy_container",
+					Name:    "Create proxy container",
+					Status:  "error",
+					Message: "Failed to clone proxy repository",
+				}
+				return err
+			}
 
-		if err := s.AddModule(moduleConfig); err != nil {
+			if err := s.container.CreateContainer(proxyDir); err != nil {
+				events <- Event{
+					Key:     "create_proxy_container",
+					Name:    "Create proxy container",
+					Status:  "error",
+					Message: "Failed to create proxy container",
+				}
+				return err
+			}
+
+			moduleConfig := Module{
+				Name: "proxy",
+				Path: proxyDir,
+			}
+
+			if err := s.AddModule(moduleConfig); err != nil {
+				events <- Event{
+					Key:     "create_proxy_container",
+					Name:    "Create proxy container",
+					Status:  "error",
+					Message: "Failed to add proxy module to config",
+				}
+				return err
+			}
+
 			events <- Event{
 				Key:     "create_proxy_container",
 				Name:    "Create proxy container",
-				Status:  "error",
-				Message: "Failed to add proxy module to config",
+				Status:  "success",
+				Message: "Proxy module added to config successfully",
 			}
-			return err
-		}
-
-		events <- Event{
-			Key:     "create_proxy_container",
-			Name:    "Create proxy container",
-			Status:  "success",
-			Message: "Proxy module added to config successfully",
 		}
 	}
 
@@ -297,109 +321,133 @@ func (s *ConfigService) CreateConfig(
 			Message: "Cloning mysql repository...",
 		}
 
-		mysqlRepo := "https://github.com/takashiraki/docker_mysql.git"
-
-		if err := s.repository.CloneRepo(mysqlRepo, mysqlDir); err != nil {
-			events <- Event{
-				Key:     "create_mysql_container",
-				Name:    "Create mysql container",
-				Status:  "error",
-				Message: "Failed to clone mysql repository",
-			}
-			return err
-		}
-
-		if err := CommonUtils.CreateEnvFile(mysqlDir); err != nil {
-			events <- Event{
-				Key:     "create_mysql_container",
-				Name:    "Create mysql container",
-				Status:  "error",
-				Message: "Failed to create .env file",
-			}
-			return err
-		}
-
-		envFilePath := filepath.Join(mysqlDir, ".env")
-
-		content, err := os.ReadFile(envFilePath)
+		output, err := s.container.ExecDockerCommand(
+			"ps",
+			"-a",
+			"--filter",
+			"name=my_database",
+		)
 
 		if err != nil {
-			events <- Event{
-				Key:     "create_mysql_container",
-				Name:    "Create mysql container",
-				Status:  "error",
-				Message: "Failed to read .env file",
+			if strings.Contains(err.Error(), "Is the docker daemon running") {
+				return errors.New("docker daemon is not running. Please start Docker and try again.")
 			}
 
 			return err
 		}
 
-		mysql_host := "my_database"
-		mysql_user := "myenv"
-		mysql_password := "myenv"
-		mysql_root_password := "rootpw"
-		db_port := "3306"
+		if strings.Contains(output, "my_database") {
+			events <- Event{
+				Key:     "create_proxy_container",
+				Name:    "Create proxy container",
+				Status:  "skipped",
+				Message: "Mysql container with the same name already exists",
+			}
+		} else {
+			mysqlRepo := "https://github.com/takashiraki/docker_mysql.git"
 
-		updateContent := string(content)
+			if err := s.repository.CloneRepo(mysqlRepo, mysqlDir); err != nil {
+				events <- Event{
+					Key:     "create_mysql_container",
+					Name:    "Create mysql container",
+					Status:  "error",
+					Message: "Failed to clone mysql repository",
+				}
+				return err
+			}
 
-		replacements := map[string]any{
-			"MYSQL_HOST=":          fmt.Sprintf("MYSQL_HOST=%s", mysql_host),
-			"MYSQL_USER=":          fmt.Sprintf("MYSQL_USER=%s", mysql_user),
-			"MYSQL_PASSWORD=":      fmt.Sprintf("MYSQL_PASSWORD=%s", mysql_password),
-			"MYSQL_ROOT_PASSWORD=": fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", mysql_root_password),
-			"DB_PORT=":             fmt.Sprintf("DB_PORT=%s", db_port),
-		}
+			if err := CommonUtils.CreateEnvFile(mysqlDir); err != nil {
+				events <- Event{
+					Key:     "create_mysql_container",
+					Name:    "Create mysql container",
+					Status:  "error",
+					Message: "Failed to create .env file",
+				}
+				return err
+			}
 
-		if err := CommonUtils.ReplaceAllValue(&updateContent, replacements); err != nil {
+			envFilePath := filepath.Join(mysqlDir, ".env")
+
+			content, err := os.ReadFile(envFilePath)
+
+			if err != nil {
+				events <- Event{
+					Key:     "create_mysql_container",
+					Name:    "Create mysql container",
+					Status:  "error",
+					Message: "Failed to read .env file",
+				}
+
+				return err
+			}
+
+			mysql_host := "my_database"
+			mysql_user := "myenv"
+			mysql_password := "myenv"
+			mysql_root_password := "rootpw"
+			db_port := "3306"
+
+			updateContent := string(content)
+
+			replacements := map[string]any{
+				"MYSQL_HOST=":          fmt.Sprintf("MYSQL_HOST=%s", mysql_host),
+				"MYSQL_USER=":          fmt.Sprintf("MYSQL_USER=%s", mysql_user),
+				"MYSQL_PASSWORD=":      fmt.Sprintf("MYSQL_PASSWORD=%s", mysql_password),
+				"MYSQL_ROOT_PASSWORD=": fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", mysql_root_password),
+				"DB_PORT=":             fmt.Sprintf("DB_PORT=%s", db_port),
+			}
+
+			if err := CommonUtils.ReplaceAllValue(&updateContent, replacements); err != nil {
+				events <- Event{
+					Key:     "create_mysql_container",
+					Name:    "Create mysql container",
+					Status:  "error",
+					Message: "Failed to update .env file",
+				}
+				return err
+			}
+
+			if err := os.WriteFile(envFilePath, []byte(updateContent), 0644); err != nil {
+				events <- Event{
+					Key:     "create_mysql_container",
+					Name:    "Create mysql container",
+					Status:  "error",
+					Message: "Failed to write .env file",
+				}
+				return err
+			}
+
+			if err := s.container.CreateContainer(mysqlDir); err != nil {
+				events <- Event{
+					Key:     "create_mysql_container",
+					Name:    "Create mysql container",
+					Status:  "error",
+					Message: "Failed to create mysql container",
+				}
+				return err
+			}
+
+			moduleConfig := Module{
+				Name: "mysql",
+				Path: mysqlDir,
+			}
+
+			if err := s.AddModule(moduleConfig); err != nil {
+				events <- Event{
+					Key:     "create_mysql_container",
+					Name:    "Create mysql container",
+					Status:  "error",
+					Message: "Failed to add mysql module to config",
+				}
+				return err
+			}
+
 			events <- Event{
 				Key:     "create_mysql_container",
 				Name:    "Create mysql container",
-				Status:  "error",
-				Message: "Failed to update .env file",
+				Status:  "success",
+				Message: "Mysql module added to config successfully",
 			}
-			return err
-		}
-
-		if err := os.WriteFile(envFilePath, []byte(updateContent), 0644); err != nil {
-			events <- Event{
-				Key:     "create_mysql_container",
-				Name:    "Create mysql container",
-				Status:  "error",
-				Message: "Failed to write .env file",
-			}
-			return err
-		}
-
-		if err := s.container.CreateContainer(mysqlDir); err != nil {
-			events <- Event{
-				Key:     "create_mysql_container",
-				Name:    "Create mysql container",
-				Status:  "error",
-				Message: "Failed to create mysql container",
-			}
-			return err
-		}
-
-		moduleConfig := Module{
-			Name: "mysql",
-			Path: mysqlDir,
-		}
-
-		if err := s.AddModule(moduleConfig); err != nil {
-			events <- Event{
-				Key:     "create_mysql_container",
-				Name:    "Create mysql container",
-				Status:  "error",
-				Message: "Failed to add mysql module to config",
-			}
-			return err
-		}
-
-		events <- Event{
-			Key:     "create_mysql_container",
-			Name:    "Create mysql container",
-			Status:  "success",
-			Message: "Mysql module added to config successfully",
 		}
 	}
 
@@ -413,109 +461,133 @@ func (s *ConfigService) CreateConfig(
 			Message: "Cloning mailpit repository...",
 		}
 
-		mailpitRepo := "https://github.com/takashiraki/docker_mailpit.git"
-		if err := s.repository.CloneRepo(mailpitRepo, mailpitDir); err != nil {
-			events <- Event{
-				Key:     "create_mailpit_container",
-				Name:    "Create mailpit container",
-				Status:  "error",
-				Message: "Failed to clone mailpit repository",
-			}
-			return err
-		}
-
-		if err := CommonUtils.CreateEnvFile(mailpitDir); err != nil {
-			events <- Event{
-				Key:     "create_mailpit_container",
-				Name:    "Create mailpit container",
-				Status:  "error",
-				Message: "Failed to create .env file",
-			}
-			return err
-		}
-
-		envFilePath := filepath.Join(mailpitDir, ".env")
-
-		content, err := os.ReadFile(envFilePath)
+		output, err := s.container.ExecDockerCommand(
+			"ps",
+			"-a",
+			"--filter",
+			"name=mail",
+		)
 
 		if err != nil {
-			events <- Event{
-				Key:     "create_mailpit_container",
-				Name:    "Create mailpit container",
-				Status:  "error",
-				Message: "Failed to read .env file",
+			if strings.Contains(err.Error(), "Is the docker daemon running") {
+				return errors.New("docker daemon is not running. Please start Docker and try again.")
 			}
+
 			return err
 		}
 
-		mp_database := "/data/mailpit.db"
-		mp_max_messages := 5000
-		mp_smtp_uauth_accept_any := 1
-		mp_smtp_auth_allow_insecure := 1
-		virtual_host := "mailpit.localhost"
-		virtual_port := 8025
+		if strings.Contains(output, "mail") {
+			events <- Event{
+				Key:     "create_proxy_container",
+				Name:    "Create proxy container",
+				Status:  "skipped",
+				Message: "Mailpit container with the same name already exists",
+			}
+		} else {
+			mailpitRepo := "https://github.com/takashiraki/docker_mailpit.git"
+			if err := s.repository.CloneRepo(mailpitRepo, mailpitDir); err != nil {
+				events <- Event{
+					Key:     "create_mailpit_container",
+					Name:    "Create mailpit container",
+					Status:  "error",
+					Message: "Failed to clone mailpit repository",
+				}
+				return err
+			}
 
-		updateContent := string(content)
+			if err := CommonUtils.CreateEnvFile(mailpitDir); err != nil {
+				events <- Event{
+					Key:     "create_mailpit_container",
+					Name:    "Create mailpit container",
+					Status:  "error",
+					Message: "Failed to create .env file",
+				}
+				return err
+			}
 
-		replacements := map[string]any{
-			"MP_DATABASE=":                 fmt.Sprintf("MP_DATABASE=%s", mp_database),
-			"MP_MAX_MESSAGES=":             fmt.Sprintf("MP_MAX_MESSAGES=%d", mp_max_messages),
-			"MP_SMTP_UAUTH_ACCEPT_ANY=":    fmt.Sprintf("MP_SMTP_UAUTH_ACCEPT_ANY=%d", mp_smtp_uauth_accept_any),
-			"MP_SMTP_AUTH_ALLOW_INSECURE=": fmt.Sprintf("MP_SMTP_AUTH_ALLOW_INSECURE=%d", mp_smtp_auth_allow_insecure),
-			"VIRTUAL_HOST=":                fmt.Sprintf("VIRTUAL_HOST=%s", virtual_host),
-			"VIRTUAL_PORT=":                fmt.Sprintf("VIRTUAL_PORT=%d", virtual_port),
-		}
+			envFilePath := filepath.Join(mailpitDir, ".env")
 
-		if err := CommonUtils.ReplaceAllValue(&updateContent, replacements); err != nil {
+			content, err := os.ReadFile(envFilePath)
+
+			if err != nil {
+				events <- Event{
+					Key:     "create_mailpit_container",
+					Name:    "Create mailpit container",
+					Status:  "error",
+					Message: "Failed to read .env file",
+				}
+				return err
+			}
+
+			mp_database := "/data/mailpit.db"
+			mp_max_messages := 5000
+			mp_smtp_uauth_accept_any := 1
+			mp_smtp_auth_allow_insecure := 1
+			virtual_host := "mailpit.localhost"
+			virtual_port := 8025
+
+			updateContent := string(content)
+
+			replacements := map[string]any{
+				"MP_DATABASE=":                 fmt.Sprintf("MP_DATABASE=%s", mp_database),
+				"MP_MAX_MESSAGES=":             fmt.Sprintf("MP_MAX_MESSAGES=%d", mp_max_messages),
+				"MP_SMTP_UAUTH_ACCEPT_ANY=":    fmt.Sprintf("MP_SMTP_UAUTH_ACCEPT_ANY=%d", mp_smtp_uauth_accept_any),
+				"MP_SMTP_AUTH_ALLOW_INSECURE=": fmt.Sprintf("MP_SMTP_AUTH_ALLOW_INSECURE=%d", mp_smtp_auth_allow_insecure),
+				"VIRTUAL_HOST=":                fmt.Sprintf("VIRTUAL_HOST=%s", virtual_host),
+				"VIRTUAL_PORT=":                fmt.Sprintf("VIRTUAL_PORT=%d", virtual_port),
+			}
+
+			if err := CommonUtils.ReplaceAllValue(&updateContent, replacements); err != nil {
+				events <- Event{
+					Key:     "create_mailpit_container",
+					Name:    "Create mailpit container",
+					Status:  "error",
+					Message: "Failed to update .env file",
+				}
+				return err
+			}
+
+			if err := os.WriteFile(envFilePath, []byte(updateContent), 0644); err != nil {
+				events <- Event{
+					Key:     "create_mailpit_container",
+					Name:    "Create mailpit container",
+					Status:  "error",
+					Message: "Failed to write .env file",
+				}
+				return err
+			}
+
+			if err := s.container.CreateContainer(mailpitDir); err != nil {
+				events <- Event{
+					Key:     "create_mailpit_container",
+					Name:    "Create mailpit container",
+					Status:  "error",
+					Message: "Failed to create mailpit container",
+				}
+				return err
+			}
+
+			moduleConfig := Module{
+				Name: "mailpit",
+				Path: mailpitDir,
+			}
+
+			if err := s.AddModule(moduleConfig); err != nil {
+				events <- Event{
+					Key:     "create_mailpit_container",
+					Name:    "Create mailpit container",
+					Status:  "error",
+					Message: "Failed to add mailpit module to config",
+				}
+				return err
+			}
+
 			events <- Event{
 				Key:     "create_mailpit_container",
 				Name:    "Create mailpit container",
-				Status:  "error",
-				Message: "Failed to update .env file",
+				Status:  "success",
+				Message: "Mailpit module added to config successfully",
 			}
-			return err
-		}
-
-		if err := os.WriteFile(envFilePath, []byte(updateContent), 0644); err != nil {
-			events <- Event{
-				Key:     "create_mailpit_container",
-				Name:    "Create mailpit container",
-				Status:  "error",
-				Message: "Failed to write .env file",
-			}
-			return err
-		}
-
-		if err := s.container.CreateContainer(mailpitDir); err != nil {
-			events <- Event{
-				Key:     "create_mailpit_container",
-				Name:    "Create mailpit container",
-				Status:  "error",
-				Message: "Failed to create mailpit container",
-			}
-			return err
-		}
-
-		moduleConfig := Module{
-			Name: "mailpit",
-			Path: mailpitDir,
-		}
-
-		if err := s.AddModule(moduleConfig); err != nil {
-			events <- Event{
-				Key:     "create_mailpit_container",
-				Name:    "Create mailpit container",
-				Status:  "error",
-				Message: "Failed to add mailpit module to config",
-			}
-			return err
-		}
-
-		events <- Event{
-			Key:     "create_mailpit_container",
-			Name:    "Create mailpit container",
-			Status:  "success",
-			Message: "Mailpit module added to config successfully",
 		}
 	}
 
