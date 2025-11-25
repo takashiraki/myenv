@@ -74,6 +74,11 @@ func SetUp(quick bool) {
 			case "success":
 				stopLoading()
 				fmt.Printf("\r\033[K\033[32m✓\033[0m %s\n", event.Message)
+			case "skipped":
+				stopLoading()
+				fmt.Printf("\r\033[K\033[33mℹ\033[0m %s\n", event.Message)
+				loadingDone = make(chan bool)
+				go utils.ShowLoadingIndicator("Continuing...", loadingDone)
 			case "error":
 				stopLoading()
 				fmt.Printf("\r\033[K\033[31m✗\033[0m %s\n", event.Message)
