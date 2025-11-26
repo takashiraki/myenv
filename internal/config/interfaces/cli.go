@@ -28,8 +28,6 @@ func SetUp(quick bool) {
 		return
 	}
 
-	fmt.Printf("\n\033[36m🔧 Setup Mode:\033[0m %s\n", map[bool]string{true: "Quick Setup", false: "Standard Setup"}[quick])
-
 	dockerInstalled := false
 
 	if _, err := container.ExecDockerCommand("--version"); err == nil {
@@ -69,6 +67,36 @@ func SetUp(quick bool) {
 				fmt.Println("\033[31m✗ Docker is not detected. Please make sure it's installed and running.\033[0m")
 			}
 		}
+	}
+
+	if !quick {
+		fmt.Printf("\n\033[36m🔧 Setup Configuration\033[0m\n\n")
+		fmt.Printf("  \033[1mQuick Setup (Recommended)\033[0m\n")
+		fmt.Printf("    • Creates basic configuration file\n")
+		fmt.Printf("    • Faster setup process\n")
+		fmt.Printf("    • Use 'myenv init' to create projects\n\n")
+		fmt.Printf("  \033[1mStandard Setup\033[0m\n")
+		fmt.Printf("    • Creates configuration file\n")
+		fmt.Printf("    • Creates Docker networks immediately\n")
+		fmt.Printf("    • Ready for immediate use\n\n")
+
+		setupPrompt := &survey.Select{
+			Message: "Select setup type:",
+			Options: []string{
+				"Quick Setup (Recommended)",
+				"Standard Setup",
+			},
+		}
+
+		var selectedSetup string
+		if err := survey.AskOne(setupPrompt, &selectedSetup); err != nil {
+			fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
+			return
+		}
+
+		quick = selectedSetup == "Quick Setup (Recommended)"
+
+		fmt.Printf("\n\033[36m🔧 Setup Mode:\033[0m %s\n", selectedSetup)
 	}
 
 	if quick {
