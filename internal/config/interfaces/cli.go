@@ -7,6 +7,7 @@ import (
 	"myenv/internal/utils"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -28,6 +29,54 @@ func SetUp(quick bool) {
 	}
 
 	fmt.Printf("\n\033[36m🔧 Setup Mode:\033[0m %s\n", map[bool]string{true: "Quick Setup", false: "Standard Setup"}[quick])
+
+	dockerInstalled := false
+
+	if _, err := container.ExecDockerCommand("--version"); err == nil {
+		dockerInstalled = true
+	}
+
+	if !dockerInstalled {
+		for !dockerInstalled {
+			fmt.Print("Now please install and start Docker before running the setup.\n")
+			url := "https://www.docker.com/"
+			fmt.Printf("Opening Docker installation page: %s\n", url)
+
+			if err := openBrowser(url); err != nil {
+				fmt.Printf("\033[33mℹ Info:\033[0m Please visit %s to install Docker.\n", url)
+			}
+
+			var confirm bool
+			confirmPrompt := &survey.Confirm{
+				Message: "Have you installed and started Docker?",
+				Default: true,
+			}
+
+			if err := survey.AskOne(confirmPrompt, &confirm); err != nil {
+				fmt.Printf("\n\033[31m✗ Error:\033[0m %v\n", err)
+				return
+			}
+
+			if !confirm {
+				fmt.Println("Please install Docker and try again.")
+				return
+			}
+
+			if _, err := container.ExecDockerCommand("--version"); err == nil {
+				dockerInstalled = true
+				fmt.Println("\033[32m✓ Docker is installed and running!\033[0m")
+			} else {
+				fmt.Println("\033[31m✗ Docker is not detected. Please make sure it's installed and running.\033[0m")
+			}
+		}
+	}
+
+	if _, err := container.ExecDockerCommand("--version"); err != nil {
+		fmt.Printf("\n\033[31m✗ Error:\033[0m Docker is not installed or not running.\n")
+		fmt.Printf("           Please install and start Docker before running the setup.\n")
+		return
+	}
+
 	if quick {
 		fmt.Printf("\033[33mℹ Info:\033[0m Quick setup will create basic configuration only.\n")
 		fmt.Printf("          Use 'myenv create' after setup to create project containers.\n\n")
@@ -286,4 +335,19 @@ func showErrorHandling(errMsg string) {
 		fmt.Fprintf(os.Stderr, "\033[33m💡 Hint:\033[0m Please check the error message above and try again.\n")
 		fmt.Fprintf(os.Stderr, "           If the problem persists, check Docker logs or project configuration.\n")
 	}
+}
+
+func openBrowser(url string) error {
+	var cmd *exec.Cmd
+
+	switch runtime.GOOS {
+	case "linux":
+		cmd = exec.Command("xdg-open", url)
+	case "darwin":
+		cmd = exec.Command("open", url)
+	default:
+		return fmt.Errorf("unsupported platform")
+	}
+
+	return cmd.Start()
 }
