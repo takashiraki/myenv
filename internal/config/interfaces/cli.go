@@ -71,12 +71,6 @@ func SetUp(quick bool) {
 		}
 	}
 
-	if _, err := container.ExecDockerCommand("--version"); err != nil {
-		fmt.Printf("\n\033[31m✗ Error:\033[0m Docker is not installed or not running.\n")
-		fmt.Printf("           Please install and start Docker before running the setup.\n")
-		return
-	}
-
 	if quick {
 		fmt.Printf("\033[33mℹ Info:\033[0m Quick setup will create basic configuration only.\n")
 		fmt.Printf("          Use 'myenv create' after setup to create project containers.\n\n")
